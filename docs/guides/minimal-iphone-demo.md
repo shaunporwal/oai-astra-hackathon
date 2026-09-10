@@ -4,7 +4,7 @@ Use the independent native client in `ios/backup` with the existing Python backe
 
 ## Current installation step
 
-The app has been signed with the user's Personal Team and installed on the connected iPhone 15 Pro. Developer Mode is enabled. The first launch was blocked by iOS pending developer trust; signature verification passed and the provisioning profile includes the phone. On the phone, open **Settings → General → VPN & Device Management**, select the developer account, and trust it (follow any restart prompt). Then open **Eye Lab Backup** and allow Camera/Local Network access.
+The app has been signed with the user's Personal Team and installed on the connected iPhone 15 Pro. Developer Mode is enabled. Developer trust is now confirmed: launching the installed app through `devicectl` succeeded. Signature verification passed and the provisioning profile includes the phone. On the phone, open **Settings → General → VPN & Device Management**, select the developer account, and trust it (follow any restart prompt). Then open **Eye Lab Backup** and allow Camera/Local Network access.
 
 For future builds, use the connected iPhone as the Xcode run destination and select your Team under Signing & Capabilities. The signed scheme build now works after the Xcode components were installed. Personal signing details are supplied locally, not committed.
 
@@ -40,4 +40,4 @@ The optional **Local analysis only** dropdown runs measurements without an Astra
 
 Native macro-image acquisition, reproducible frame-specific processing, candidate vessel coverage or pupil/iris ratio when measurable, and Astra observations for six specified research endpoints. Numerical measurements come from the local image algorithms; Astra does not invent missing values. Some endpoints need different views, calibration or temporal protocols and will remain unavailable. This is a capture-and-assessment prototype, not a validated diagnostic application. See [clinical value](../research/clinical-value.md) for the clinical workflow and evidence plan.
 
-Installation succeeded. First launch after trust, camera alignment through this attachment, and phone-to-Mac networking still require an on-device smoke check.
+Installation succeeded. Launch after trust succeeded. Camera alignment through this attachment and phone-to-Mac networking still require an on-device smoke check.
