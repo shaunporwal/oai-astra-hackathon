@@ -4,12 +4,12 @@ Adds a browser dashboard and independent native iPhone client for saving eye-vid
 
 Python owns candidate vessel coverage, pupil/iris geometry and structured review of six literature-grounded research targets. Missing or unsupported numerical values remain unavailable. Astra supplies observations rather than invented measurements; the application does not establish diagnoses. Credentials stay on the Mac, mobile access uses a rotating pairing token, and successful saved-case reviews are cached. API requests are explicit, with no automatic retry loop. LAN HTTP is development transport.
 
-The backup and prepared partner-UI bridge share one Swift API client. Partner screens are not yet integrated. Specifications, literature, evaluation plans and setup guides are organized under lowercase paths.
+The backup and prepared partner-UI bridge share one Swift API client. The installed native client now adapts the partner’s visual theme and capture/review hierarchy into a three-step flow with persistent primary action, settings sheet and expandable cards. The full partner session application is not merged. Specifications, literature, evaluation plans and setup guides are organized under lowercase paths.
 
 ## Validation and remaining limits
 
 - Full unsigned native iPhone build and Swift contract checks passed, including decoding an actual six-target Astra response.
 - Existing Python suite: 35 tests passed at the preceding backend milestone. Browser fake-camera checks covered manual/automatic save, stale sessions, annotation/server failures and compact layout.
 - Latest running-backend smoke check used one frame from the user's macro recording and one paid Astra request: snapshot/review succeeded, but all numerical endpoints were unavailable for that frame.
-- Connected iPhone and Developer Mode confirmed. Signed build and native installation succeeded. First launch is pending developer trust on the phone; attachment alignment and phone-to-Mac capture flow remain unverified. A one-use USB pairing import avoids initial clipboard setup.
+- Connected iPhone and Developer Mode confirmed. Signed build and native installation succeeded. Developer trust and launch succeeded, including after the visual update. Simulator capture-screen layout was inspected; the redesigned review/results interactions and physical capture-to-analysis flow still need a user smoke check. A one-use USB pairing import avoids initial clipboard setup.
 - Segmentation and endpoint measurements remain experimental. Clinical evaluation needs suitable targeted captures and independent reference labels.

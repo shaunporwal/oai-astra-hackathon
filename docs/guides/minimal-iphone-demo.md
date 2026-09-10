@@ -24,7 +24,7 @@ pbcopy < vision/runs/mobile/mobile-pairing.json
 
 For this installation, pairing was transferred over USB into a one-use temporary file. The app imports and deletes it at startup; it remains in memory only. Manual pairing is still available:
 
-Paste into **Pair with analysis server** on the phone using Universal Clipboard, then tap **Use pairing configuration**. Re-pair after restarting the app or server. The API key stays in the Mac environment; it is not embedded in the iPhone app.
+Open the top-right **Settings** button and paste into **Mac connection** on the phone using Universal Clipboard, then tap **Use pairing configuration**. Re-pair after restarting the app or server. The API key stays in the Mac environment; it is not embedded in the iPhone app.
 
 ## Capture and assess
 
@@ -34,7 +34,7 @@ Paste into **Pair with analysis server** on the phone using Universal Clipboard,
 4. Tap **Analyze + Ask Astra**. The Mac measures the saved JPEG, then sends that same frame for structured Astra review. Expand endpoint results and local measurements to inspect output.
 5. Retake to start another capture. No background Astra loop is running. Completed assessments disable the main action; a failed review retains its saved case for explicit retry. Server-cached successful reviews do not incur another request. A failed or interrupted upstream request may still be billed.
 
-The optional **Local analysis only** dropdown runs measurements without an Astra request. Captured JPEGs can be exported from the phone; backend cases and structured JSON are stored under ignored `vision/runs/mobile/`.
+The optional **Measure locally · no API credits** action on Review runs measurements without an Astra request. Captured JPEGs can be exported from the phone; backend cases and structured JSON are stored under ignored `vision/runs/mobile/`.
 
 ## What the demo demonstrates
 

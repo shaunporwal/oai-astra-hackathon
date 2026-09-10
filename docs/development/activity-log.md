@@ -200,3 +200,9 @@ Added a one-use USB pairing import from the app temporary directory, deleting th
 ### Developer trust and launch confirmed
 
 After the user trusted the developer account, `devicectl device process launch` succeeded on the connected iPhone. The app temporary directory is empty, consistent with the one-use pairing file being consumed; this alone does not prove successful pairing or network connectivity. The Mac backend is still listening on port 8766. Camera permission, physical preview and a phone-originated capture/analysis request remain to be checked. No API requests were made.
+
+## 2026-09-10 — Adapt partner visual design into the installed app
+
+Fetched the partner branch and reused its Theme/AmbientBackground/glassCard plus button/chip components under lowercase native source files. Reorganized the working app into Capture, Review and Results, with persistent primary action, rounded viewfinder/cards, clearer instruction hierarchy, a settings sheet for pairing/exposure, and expandable endpoint details. Retake, export, manual region selection, local-only analysis, paid review, result invalidation and one-use USB pairing remain wired to the existing camera/client/backend. No partner clinical endpoint algorithms or seeded sessions were imported.
+
+Validation: signed iPhone scheme build and simulator build passed. Inspected a simulator capture-screen screenshot at `vision/runs/native-ui-capture.png`; camera unavailable is expected in the simulator, and the capture button is disabled. Review/results were compiled but have not been interactively exercised in this visual update. Installed the signed app update on the physical iPhone, refreshed pairing over USB and successfully launched it. No paid requests were made. Existing saved captures were not intentionally deleted.

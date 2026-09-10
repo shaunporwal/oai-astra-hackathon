@@ -1,6 +1,6 @@
 # Eye Lab backup iPhone app
 
-Independent SwiftUI/AVFoundation client for iPhone 15 Pro, with iOS 17+ deployment target. It does not edit or depend on the partner's Swift application. Open [eye-backup.xcodeproj](eye-backup.xcodeproj) in Xcode.
+SwiftUI/AVFoundation client with visual components adapted from the partner OptLab branch. Independent capture/backend integration for iPhone 15 Pro, with iOS 17+ deployment target. It does not edit or depend on the partner's Swift application. Open [eye-backup.xcodeproj](eye-backup.xcodeproj) in Xcode.
 
 ## Implemented
 
@@ -51,9 +51,9 @@ Copy the pairing JSON into the clipboard without printing its token:
 pbcopy < vision/runs/mobile/mobile-pairing.json
 ```
 
-Use Universal Clipboard or another private transfer to paste the full JSON into **Pair with analysis server** on the phone, then tap **Use pairing configuration**. Pairing lives in app memory and must be re-entered after app termination. The server regenerates the token on every restart. Pairing files and captures are Git-ignored; the file is mode 0600. The remote root page does not reveal a session token, and analysis endpoints require the pairing token. Redirects are refused by the native client.
+Open the top-right **Settings** button. Use Universal Clipboard or another private transfer to paste the full JSON into **Mac connection** on the phone, then tap **Use pairing configuration**. Pairing lives in app memory and must be re-entered after app termination. The server regenerates the token on every restart. Pairing files and captures are Git-ignored; the file is mode 0600. The remote root page does not reveal a session token, and analysis endpoints require the pairing token. Redirects are refused by the native client.
 
-After capture, select a region and tap **Analyze + Ask Astra** for local measurement followed by endpoint review. Use **Local analysis only → Measure on Mac** to inspect the overlay without an Astra request. Results apply to the captured image; changing the target or region invalidates the old local result. Failed reviews retain the saved case for explicit retry, and completed assessments disable the main action. The current model remains experimental and does not establish a diagnosis. See the [minimal demo guide](../../docs/guides/minimal-iphone-demo.md).
+Use **Capture → Review → Results**. After capture, select a region and tap **Analyze + Ask Astra** for local measurement followed by endpoint review. Use **Measure locally · no API credits** to inspect the overlay without an Astra request. Results apply to the captured image; changing the target or region invalidates the old local result. Failed reviews retain the saved case for explicit retry, and completed assessments disable the main action. The current model remains experimental and does not establish a diagnosis. See the [minimal demo guide](../../docs/guides/minimal-iphone-demo.md).
 
 ## Verification
 
