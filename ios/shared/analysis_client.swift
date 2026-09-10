@@ -21,7 +21,13 @@ struct Endpoint: Codable, Identifiable {
     var id: String { target_id }
 }
 struct EndpointAssessment: Codable { let targets: [Endpoint] }
-struct Review: Codable { let prediction: String; let endpoint_assessment: EndpointAssessment }
+struct ImageClaim: Codable {
+    let claim: String; let location: String; let evidence_frame_indices: [Int]; let visual_confidence: String
+    let interpretation: String; let alternative: String; let supporting_evidence: String
+    let contradicting_or_missing_evidence: String; let verification: String
+}
+struct ImageAssessment: Codable { let headline: String; let summary: String; let claims: [ImageClaim] }
+struct Review: Codable { let prediction: String; let endpoint_assessment: EndpointAssessment; var image_assessment: ImageAssessment? = nil }
 
 final class NoRedirects: NSObject, URLSessionTaskDelegate {
     func urlSession(_ session: URLSession, task: URLSessionTask, willPerformHTTPRedirection response: HTTPURLResponse, newRequest request: URLRequest, completionHandler: @escaping (URLRequest?) -> Void) { completionHandler(nil) }

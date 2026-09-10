@@ -81,6 +81,7 @@ class AstraTests(unittest.TestCase):
         spec, digest = specification()
         data = {"prediction": "unusable", "eye_visible": "no", "evidence_frame_indices": [0],
                 "observations": ["No eye visible"], "limitations": ["Synthetic frame"],
+                "image_assessment": {"headline":"No eye visible", "summary":"This frame is black.", "claims":[]},
                 "endpoints": [{"target_id": t['id'], "status": "not_captured",
                     "observation": "Required anatomy or protocol not captured.",
                     "evidence_frame_indices": [0], "limitations": ["No measurement available"]}

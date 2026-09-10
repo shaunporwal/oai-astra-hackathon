@@ -205,6 +205,12 @@ struct CaptureView: View {
                                 Button("Send to Astra") { Task { await analyze(includeAstra:true) } }
                                     .buttonStyle(PrimaryButtonStyle()).disabled(!canAnalyze)
                             }
+                            if !busy, let review, review.image_assessment == nil {
+                                Button("Generate detailed analysis · uses API credits") {
+                                    persistCurrent();snapshot=nil;self.review=nil;backendCaseCurrent=false
+                                    Task { await analyze(includeAstra:true) }
+                                }.buttonStyle(PrimaryButtonStyle()).disabled(!canAnalyze)
+                            }
                             if let localFile { ShareLink(item:localFile) { Label("Export captured image",systemImage:"square.and.arrow.up") } }
                             Text("Research prototype. Measurements are unvalidated and do not establish a diagnosis.")
                                 .font(.caption).foregroundStyle(Theme.Colors.inkSecondary)
@@ -225,7 +231,11 @@ struct CaptureView: View {
             if let review {
                 let observed=review.endpoint_assessment.targets.filter { $0.status == "observed" }
                 let unavailable=review.endpoint_assessment.targets.filter { $0.status != "observed" }
-                reviewTakeaway(observed)
+                if let assessment=review.image_assessment {
+                    imageAssessment(assessment)
+                } else {
+                    reviewTakeaway(observed)
+                }
                 Text("Observed features").font(.headline)
                 if observed.isEmpty {
                     Text("No target has a confident visual observation in this image.")
@@ -266,6 +276,34 @@ struct CaptureView: View {
                 }
             } else {
                 measurementSummary
+            }
+        }
+    }
+
+    private func imageAssessment(_ assessment: ImageAssessment) -> some View {
+        VStack(alignment:.leading,spacing:16) {
+            VStack(alignment:.leading,spacing:8) {
+                Text("Main insight").font(.caption.weight(.semibold)).foregroundStyle(Theme.Colors.inkSecondary)
+                Text(assessment.headline).font(.headline)
+                Text(assessment.summary).font(.subheadline)
+                Text("Experimental interpretation · not a confirmed diagnosis").font(.caption2).foregroundStyle(Theme.Colors.inkSecondary)
+            }.glassCard(padding:16)
+            ForEach(Array(assessment.claims.enumerated()),id:\.offset) { _,claim in
+                VStack(alignment:.leading,spacing:10) {
+                    Text(claim.claim).font(.headline)
+                    Text(claim.location + " · Visibility: " + claim.visual_confidence)
+                        .font(.caption).foregroundStyle(Theme.Colors.inkSecondary)
+                    Text("Interpretation: " + claim.interpretation).font(.subheadline)
+                    Text("Alternative: " + claim.alternative).font(.subheadline)
+                    DisclosureGroup("Evidence & how to check") {
+                        VStack(alignment:.leading,spacing:8) {
+                            Text("Supports: " + claim.supporting_evidence)
+                            Text("Against / missing: " + claim.contradicting_or_missing_evidence)
+                            Text("Check: " + claim.verification)
+                            Text("Source frames: " + claim.evidence_frame_indices.map(String.init).joined(separator:", "))
+                        }.font(.caption).padding(.top,8)
+                    }.font(.caption)
+                }.glassCard(padding:16)
             }
         }
     }

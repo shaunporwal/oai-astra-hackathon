@@ -49,3 +49,5 @@ Put operating instructions in `guides/`, scientific evidence and evaluation desi
 Store recordings in root `data/` and generated images/predictions in `vision/runs/`; both are Git-ignored. Personal observations belong with the local run, while the activity log records artifact locations and engineering findings.
 
 [Live demo guide](guides/live-demo.md): select the iPhone Continuity Camera on the Mac, view local overlays, and optionally request Astra review.
+
+- [Testable image reports](development/testable-image-reports.md): claim structure, interpretation limits, cached report behavior and evaluation.

@@ -284,3 +284,9 @@ Validation: 39 Python tests passed, including delayed-job deduplication, cache r
 Moved the saved image, experimental overlay legend and capture/observed-count row outside the modal ScrollView. The report below that row scrolls independently; close and outside-tap dismissal remain available. Image height adapts to the available screen height. Added a Main takeaway card before Observed features, derived from the existing observed target titles, with explicit disease-status wording. Current endpoint observations do not encode a supported disease diagnosis, so the UI says “Disease status: not established”; it does not infer disease or normality from the observed count. No new model request or response schema change is involved, and saved reviews work unchanged.
 
 Validation: signed device and simulator builds passed; inspected the populated simulator review layout using a cached result. Installed and launched on the connected iPhone. No API calls were made.
+
+## 2026-09-10 — Specific, falsifiable image analysis
+
+Identified restrictive capture-only system wording, descriptive-only endpoint instructions and the deterministic takeaway as causes of generic reports. Added a structured image assessment with a model-written headline and up to five located/evidenced claims, provisional interpretations, alternatives, supporting and missing evidence, and verification steps. Native review displays this above existing endpoint details. Old cached reviews remain readable with an explicit paid detailed-analysis action; no automatic regeneration. See `docs/development/testable-image-reports.md`.
+
+43 offline tests and signed/device and simulator builds passed. One paid live smoke test completed in 41.96 seconds with three structured claims (3,835 tokens); no retries. Installed/launched on the iPhone and checked the real response in the simulator. Clinical accuracy has not been validated.
