@@ -114,7 +114,7 @@ def create_app(output=None):
     async def review(case: str, request: Request):
         authorize(request)
         folder=case_folder(case)
-        existing=folder/"prediction.json"
+        existing=folder/"endpoint-prediction.json"
         if existing.exists():
             return json.loads(existing.read_text())
         if not has_astra():
@@ -124,7 +124,7 @@ def create_app(output=None):
         async with review_lock:
             from .astra import analyze
             try:
-                result=await run_in_threadpool(analyze,folder/"manifest.json",case)
+                result=await run_in_threadpool(analyze,folder/"manifest.json",case,endpoint_review=True)
             except Exception:
                 raise HTTPException(502,"Astra review failed; no diagnosis or substitute result was generated") from None
             existing.write_text(json.dumps(result,indent=2)+'\n')

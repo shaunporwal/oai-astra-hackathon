@@ -55,3 +55,9 @@ Refresh the dashboard and start the camera or recorded replay. Click **Auto-sele
 The prototype gates on a centered dark-region candidate, clipping, and a raw Laplacian threshold of 40 at the current processing resolution. These thresholds are engineering defaults, not calibrated eye-image quality criteria. A false pupil candidate can still pass, and a valid eye can fail. The UI's guidance describes these heuristics, not an Astra decision. Browser capability reporting lists exposed focus/exposure/zoom controls without changing settings; absence is reported explicitly. It does not establish that a reported control works on the actual phone.
 
 Structured Astra capture actions and persistent spending limits remain the next implementation milestone. Diagnosis remains unconfigured.
+
+## Specification-backed endpoint observations
+
+The dashboard's Astra action now requests capture quality and all six `specs/details.json` targets in one request. Each target returns a descriptive observation, evidence indices, limitations and observed/ungradable/not_captured status. Observed means appearance can be described, not that a clinical endpoint was measured. The server attaches every specified measurement with null value and an explicit not_measured/not_calibrated status; numerical segmentation, calibration and timed-response methods are not yet connected.
+
+Results are saved as `endpoint-prediction.json`, separately from older quality-only `prediction.json` files. Reopening a prior case and requesting the new assessment incurs a new API request; completed endpoint results are cached. The CLI remains quality-only. The target-specification hash and expanded prompt hash are recorded for reproducibility. The server rejects missing/duplicate targets, unknown evidence indices and claims that selected stills establish a light reflex. There are no additional automated API calls.

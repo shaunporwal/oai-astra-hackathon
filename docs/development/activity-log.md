@@ -118,3 +118,9 @@ Implemented an opt-in, single-shot stable-window selector in `static/selector.js
 Validation: 22 Python tests passed; Node selection tests cover missing candidates, exact best-frame identity, motion reset, low-detail rejection and stale buffers. Spot-checked all eight prepared recording frames at the dashboard resolution: frame 0 lacked a candidate; the other seven produced candidates, including previously noted imperfect views. This confirms the selector still needs independent eye-quality evaluation and must not claim anatomical correctness. Browser smoke results are recorded below. No paid API calls were made.
 
 Browser validation: Playwright simulated-camera discovery/start, capability reporting, selection arm/cancel, guidance, and stop passed without JavaScript errors. This was not a physical iPhone test. Node selector tests passed after adding the low-detail gate. Git whitespace checks passed.
+
+## 2026-09-10 — Connect research endpoint specification to Astra
+
+Addressed the implementation gap between the target JSON and the quality-only dashboard request. Added a structured six-target appearance assessment, target-specification hash and full prompt hash, server validation of coverage/evidence, and explicit null quantitative measurements. Replaced the static diagnosis-unconfigured UI card with per-target research results while retaining the fact that clinical diagnosis is unimplemented. Old quality-only cache files are preserved separately. No paid API request was used for this change; SDK mock roundtrip exercises the expanded schema and validation. CLI quality-review behavior is preserved.
+
+Validation: 23 Python tests, selector tests, JavaScript syntax and Git whitespace checks passed. A browser rendering check displayed all six targets using offline fixtures without JavaScript errors. Restarted the local server with the expanded assessment route. No new clinical validation is claimed.

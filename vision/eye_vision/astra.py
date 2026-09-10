@@ -11,6 +11,7 @@ from typing import Literal
 from pydantic import BaseModel, ConfigDict
 
 from .config import configure_api_key
+from .endpoints import EndpointObservation, specification, instructions, assemble
 
 TASK = "capture_usability_v1"
 PROMPT_VERSION = "capture-review-v1"
@@ -34,6 +35,10 @@ class Review(BaseModel):
     evidence_frame_indices: list[int]
     observations: list[str]
     limitations: list[str]
+
+
+class EndpointReview(Review):
+    endpoints: list[EndpointObservation]
 
 
 def build_request(manifest_path, model="gpt-6-astra"):
@@ -71,8 +76,14 @@ def build_request(manifest_path, model="gpt-6-astra"):
     }
 
 
-def analyze(manifest_path, case_id, *, model="gpt-6-astra", client=None):
+def analyze(manifest_path, case_id, *, model="gpt-6-astra", client=None, endpoint_review=False):
     manifest, request = build_request(manifest_path, model)
+    spec = None
+    spec_hash = None
+    if endpoint_review:
+        spec, spec_hash = specification()
+        request["input"][0]["content"] += instructions(spec)
+        request["text_format"] = EndpointReview
     if not case_id.strip():
         raise ValueError("case_id is required")
     if client is None:
@@ -89,7 +100,7 @@ def analyze(manifest_path, case_id, *, model="gpt-6-astra", client=None):
         status = "incomplete_or_refused"
         prediction = "abstain"
     else:
-        parsed = Review.model_validate(parsed)
+        parsed = (EndpointReview if endpoint_review else Review).model_validate(parsed)
         if not set(parsed.evidence_frame_indices) <= indices:
             raise ValueError("Model cited a frame that was not supplied")
         if parsed.prediction != "abstain" and not parsed.evidence_frame_indices:
@@ -98,13 +109,15 @@ def analyze(manifest_path, case_id, *, model="gpt-6-astra", client=None):
             raise ValueError("Usable output must affirm an eye is visible")
         review = parsed.model_dump()
         status, prediction = "completed", parsed.prediction
+    endpoints = assemble(parsed.endpoints, spec, indices) if endpoint_review and status == "completed" else []
     return {
-        "schema_version": "0.2", "task": TASK, "case_id": case_id,
+        "endpoint_assessment": {"status": status if endpoint_review else "not_requested", "specification_sha256": spec_hash, "targets": endpoints},
+        "schema_version": "0.2", "task": "capture_and_endpoints_v1" if endpoint_review else TASK, "case_id": case_id,
         "source_sha256": manifest["source_sha256"], "prediction": prediction,
         "status": status, "review": review, "requested_model": model,
         "resolved_model": response.model, "response_id": response.id,
-        "prompt_version": PROMPT_VERSION,
-        "prompt_sha256": hashlib.sha256(PROMPT.encode()).hexdigest(),
+        "prompt_version": "capture-endpoints-v1" if endpoint_review else PROMPT_VERSION,
+        "prompt_sha256": hashlib.sha256(request["input"][0]["content"].encode()).hexdigest(),
         "manifest_sha256": hashlib.sha256(Path(manifest_path).read_bytes()).hexdigest(),
         "latency_seconds": time.monotonic() - started,
         "usage": response.usage.model_dump() if response.usage else None,

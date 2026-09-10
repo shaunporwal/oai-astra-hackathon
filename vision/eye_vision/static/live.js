@@ -12,7 +12,7 @@ async function api(path, options={}){
   if(!response.ok){let data;try{data=await response.json();}catch{} throw new Error(data?.detail||`Request failed (${response.status})`);}
   return response;
 }
-function resetReview(){savedCase=null;$('snapshot').hidden=true;$('review-text').textContent='';if(snapshotUrl)URL.revokeObjectURL(snapshotUrl);snapshotUrl=null;$('saved').textContent='Frames are processed locally and saved only when requested.';$('review-state').textContent=astra?'Ready for a saved frame':'API key not configured';sync();}
+function resetReview(){ $('endpoints').textContent='Send a saved frame to populate target observations.';savedCase=null;$('snapshot').hidden=true;$('review-text').textContent='';if(snapshotUrl)URL.revokeObjectURL(snapshotUrl);snapshotUrl=null;$('saved').textContent='Frames are processed locally and saved only when requested.';$('review-state').textContent=astra?'Ready for a saved frame':'API key not configured';sync();}
 function stop(){epoch++;autoSelecting=false;selector.reset();$('guidance').textContent='Automatic selection is off.';$('capabilities').textContent='Camera controls: awaiting connection.';running=false;clearTimeout(timer);if(stream)stream.getTracks().forEach(t=>t.stop());stream=null;video.pause();video.srcObject=null;video.removeAttribute('src');video.load();if(fileUrl)URL.revokeObjectURL(fileUrl);fileUrl=null;ctx.clearRect(0,0,overlay.width,overlay.height);$('stop').disabled=true;$('mode').textContent='STOPPED';$('source').textContent='No input';$('tracking').textContent='Stopped';for(const id of ['diameter','sharpness','glare','latency'])$(id).textContent='—';sync();}
 async function listCameras(){const devices=await navigator.mediaDevices.enumerateDevices();$('cameras').replaceChildren();for(const d of devices.filter(d=>d.kind==='videoinput')){const opt=new Option(d.label||'Camera',d.deviceId);$('cameras').add(opt);}const iphone=Array.from($('cameras').options).find(o=>/iphone|shaun camera/i.test(o.text));if(iphone)$('cameras').value=iphone.value;$('start').disabled=!$('cameras').options.length;}
 $('discover').onclick=async()=>{try{const permission=await navigator.mediaDevices.getUserMedia({video:true,audio:false});permission.getTracks().forEach(t=>t.stop());await listCameras();message('Choose the iPhone camera, then Start camera. Check the macro lens is over the active rear camera.');}catch(e){message(`Camera access failed: ${e.message}`);}};
@@ -26,7 +26,7 @@ function draw(r){overlay.width=r.image_size_wh[0];overlay.height=r.image_size_wh
 async function saveFrame(blob,captureMode){saving=true;sync();try{const result=await(await api('/api/snapshot',{method:'POST',headers:{'content-type':'image/jpeg','x-source-mode':captureMode},body:blob})).json();resetReview();savedCase=result.case_id;snapshotUrl=URL.createObjectURL(blob);$('snapshot').src=snapshotUrl;$('snapshot').hidden=false;$('saved').textContent=`Saved ${result.case_id} (${result.mode})`;$('review-state').textContent=astra?'Saved frame ready':'API key not configured';message(`Frame and measurements saved to ${result.saved_directory}`);}catch(e){message(e.message);}finally{saving=false;sync();}}
 $('save').onclick=async()=>{autoSelecting=false;selector.reset();try{await saveFrame(await capture(),mode);}catch(e){message(e.message);}};
 $('auto').onclick=()=>{autoSelecting=!autoSelecting;selector.reset();$('guidance').textContent=autoSelecting?'Hold the eye centered and steady. No API call will be made.':'Automatic selection is off.';sync();};
-$('review').onclick=async()=>{reviewing=true;sync();const caseId=savedCase;$('review-state').textContent='Astra is reviewing…';try{const result=await(await api(`/api/review/${caseId}`,{method:'POST'})).json();if(savedCase!==caseId)return;$('review-state').textContent=`Capture: ${result.prediction}`;$('review-text').textContent=result.review?[...result.review.observations,...result.review.limitations].join('\n\n'):'Astra abstained or the response was incomplete.';}catch(e){$('review-state').textContent='Review unavailable';message(e.message);}finally{reviewing=false;sync();}};
+$('review').onclick=async()=>{reviewing=true;sync();const caseId=savedCase;$('review-state').textContent='Astra is reviewing…';try{const result=await(await api(`/api/review/${caseId}`,{method:'POST'})).json();if(savedCase!==caseId)return;renderEndpoints(result.endpoint_assessment);$('review-state').textContent=`Capture: ${result.prediction}`;$('review-text').textContent=result.review?[...result.review.observations,...result.review.limitations].join('\n\n'):'Astra abstained or the response was incomplete.';}catch(e){$('review-state').textContent='Review unavailable';message(e.message);}finally{reviewing=false;sync();}};
 fetch('/api/status').then(r=>r.json()).then(r=>{astra=r.astra_available;$('review-state').textContent=astra?'Ready for a saved frame':'API key not configured';sync();}).catch(()=>message('Cannot reach the local analysis server.'));
 window.addEventListener('beforeunload',()=>{if(stream)stream.getTracks().forEach(t=>t.stop());});
 
@@ -35,4 +35,17 @@ function reportCapabilities(track){
   const settings=track.getSettings?.()||{};
   const controls=['focusMode','focusDistance','exposureMode','exposureCompensation','zoom'].filter(k=>k in caps);
   $('capabilities').textContent=`Camera controls reported: ${controls.join(', ')||'no focus/exposure/zoom controls exposed'}. Stream: ${settings.width||'?'} × ${settings.height||'?'}. No settings changed.`;
+}
+
+function renderEndpoints(assessment){
+  const container=$('endpoints');container.replaceChildren();
+  if(!assessment?.targets?.length){container.textContent='No endpoint assessment returned; model abstained or response was incomplete.';return;}
+  for(const target of assessment.targets){
+    const section=document.createElement('section');
+    const title=document.createElement('h3');title.textContent=target.name;
+    const body=document.createElement('p');body.textContent=`${target.status}: ${target.observation}`;
+    const limits=document.createElement('p');limits.textContent=target.limitations.join(' ');
+    const values=document.createElement('p');values.textContent=target.measurements.map(m=>`${m.name}: ${m.value??'—'} (${m.status})`).join('; ');
+    section.append(title,body,limits,values);container.append(section);
+  }
 }

@@ -75,3 +75,31 @@ class AstraTests(unittest.TestCase):
         self.path.write_text(json.dumps(self.manifest))
         with self.assertRaisesRegex(ValueError, "manifest directory"):
             build_request(self.path)
+
+    def test_endpoint_roundtrip_and_measurement_limits(self):
+        from eye_vision.endpoints import specification
+        spec, digest = specification()
+        data = {"prediction": "unusable", "eye_visible": "no", "evidence_frame_indices": [0],
+                "observations": ["No eye visible"], "limitations": ["Synthetic frame"],
+                "endpoints": [{"target_id": t['id'], "status": "not_captured",
+                    "observation": "Required anatomy or protocol not captured.",
+                    "evidence_frame_indices": [0], "limitations": ["No measurement available"]}
+                    for t in spec['targets']]}
+        def run():
+            return analyze(self.path, "fixture", endpoint_review=True,
+                client=self.client({"type": "output_text", "text": json.dumps(data), "annotations": []}))
+        result = run()
+        assessment = result['endpoint_assessment']
+        self.assertEqual(assessment['specification_sha256'], digest)
+        self.assertEqual(len(assessment['targets']), 6)
+        self.assertTrue(all(m['value'] is None for t in assessment['targets'] for m in t['measurements']))
+        data['endpoints'][0]['evidence_frame_indices'] = [99]
+        with self.assertRaisesRegex(ValueError, 'unsupplied'):
+            run()
+        data['endpoints'][0]['evidence_frame_indices'] = [0]
+        data['endpoints'][4]['status'] = 'observed'
+        with self.assertRaisesRegex(ValueError, 'light reflex'):
+            run()
+        data['endpoints'].pop()
+        with self.assertRaisesRegex(ValueError, 'exactly one'):
+            run()
