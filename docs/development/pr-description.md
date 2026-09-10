@@ -19,3 +19,5 @@ The native live screen now fits without scrolling at the checked default simulat
 The latest native UX removes numbered steps: Manual/Auto capture stays on one page, Retake is pinned at the top, and Send to Astra opens a dismissible modal containing the captured image and internally scrollable assessment. Requests continue when the modal is dismissed, and reopening a pending/completed assessment does not submit again.
 
 Users can also choose an existing image with the system Photos picker. Imported images retain their whole framing, are orientation-normalized and resized to metadata-free JPEG, and use the same saved-image assessment path with explicit imported_image provenance. Swift image-preparation checks and 37 Python tests passed.
+
+Review results now prioritize observed-feature cards and compact, unit-formatted local measurements. Unassessable targets and lengthy limitations are collapsed; no new diagnoses, values or API requests are introduced by the presentation change.

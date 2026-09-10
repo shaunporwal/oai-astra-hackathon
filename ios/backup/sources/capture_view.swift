@@ -196,11 +196,11 @@ struct CaptureView: View {
                         VStack(alignment:.leading,spacing:16) {
                             if let frozen,let image=UIImage(data:frozen) {
                                 Image(uiImage:image).resizable().scaledToFit()
-                                    .frame(maxWidth:280,maxHeight:220).clipShape(RoundedRectangle(cornerRadius:18))
+                                    .frame(maxWidth:220,maxHeight:150).clipShape(RoundedRectangle(cornerRadius:18))
                                     .frame(maxWidth:.infinity).accessibilityLabel("Captured frame sent for assessment")
                             }
                             if busy { ProgressView("Reviewing your saved frame…").frame(maxWidth:.infinity) }
-                            Text(message).font(.subheadline).accessibilityIdentifier("status")
+                            if review == nil { Text(message).font(.subheadline).accessibilityIdentifier("status") }
                             if snapshot != nil { results }
                             if !busy && review == nil {
                                 Button("Send to Astra") { Task { await analyze(includeAstra:true) } }
@@ -223,46 +223,99 @@ struct CaptureView: View {
 
     private var results: some View {
         VStack(alignment:.leading,spacing:16) {
-            HStack {
-                Chip(text:review == nil ? "Local analysis" : "Astra reviewed",tone:.info,systemImage:"sparkles")
-                Spacer()
-
-            }
-            if let snapshot {
-                DisclosureGroup("Candidate measurements",isExpanded:$measurementsExpanded) {
-                    VStack(alignment:.leading,spacing:16) {
-                        ForEach(snapshot.geometry.measurements.filter { $0.target_id == (target == "redness" ? "conjunctival_hyperemia" : "pupil_iris_ratio") }) { measurement in
-                            VStack(alignment:.leading,spacing:6) {
-                                Text(measurement.name.replacingOccurrences(of:"_",with:" ").capitalized).font(.headline)
-                                Text(measurement.value.map { measurement.unit == "fraction" ? String(format:"%.1f%% candidate coverage",$0*100) : String(format:"%.3f",$0) } ?? measurement.status.replacingOccurrences(of:"_",with:" "))
-                                    .font(.title3.weight(.semibold))
-                                Text(measurement.reason).font(.caption).foregroundStyle(Theme.Colors.inkSecondary)
-                            }
-                        }
-                    }.padding(.top,12)
-                }.glassCard()
-            }
             if let review {
-                Text("Capture quality: \(review.prediction)").font(.headline)
-                ForEach(review.endpoint_assessment.targets) { endpoint in
-                    DisclosureGroup {
-                        VStack(alignment:.leading,spacing:10) {
-                            Text(endpoint.observation)
-                            Text(endpoint.limitations.joined(separator:"\n")).foregroundStyle(Theme.Colors.inkSecondary)
-                            ForEach(endpoint.measurements,id:\.name) { m in
-                                Text("\(m.name.replacingOccurrences(of:"_",with:" ")): \(m.value.map { String(format:"%.3f",$0) } ?? m.status.replacingOccurrences(of:"_",with:" "))")
-                            }
-                        }.font(.subheadline).padding(.top,12)
-                    } label: {
-                        VStack(alignment:.leading,spacing:6) {
-                            Text(endpoint.name).font(.headline).foregroundStyle(Theme.Colors.ink)
-                            Text(endpoint.status.replacingOccurrences(of:"_",with:" ").capitalized)
+                let observed=review.endpoint_assessment.targets.filter { $0.status == "observed" }
+                let unavailable=review.endpoint_assessment.targets.filter { $0.status != "observed" }
+                HStack {
+                    Chip(text:"Capture: \(review.prediction)",tone:.info,systemImage:"viewfinder")
+                    Spacer()
+                    Text("\(observed.count) observed").font(.subheadline.weight(.semibold))
+                }
+                Text("Observed features").font(.headline)
+                if observed.isEmpty {
+                    Text("No target has a confident visual observation in this image.")
+                        .font(.subheadline).foregroundStyle(Theme.Colors.inkSecondary)
+                }
+                ForEach(observed) { endpoint in
+                    VStack(alignment:.leading,spacing:10) {
+                        Label(endpointTitle(endpoint),systemImage:"eye").font(.headline)
+                        Text(endpoint.observation).font(.subheadline)
+                        if !endpoint.measurements.contains(where: { $0.value != nil }) {
+                            Text("Visual observation only · no numeric measurement")
                                 .font(.caption).foregroundStyle(Theme.Colors.inkSecondary)
                         }
-                    }.glassCard()
+                        DisclosureGroup("Evidence & limitations") {
+                            Text(endpoint.limitations.isEmpty ? "No additional limitations were reported. This is not a diagnosis." : endpoint.limitations.joined(separator:"\n"))
+                                .font(.caption).padding(.top,8)
+                        }.font(.caption)
+                    }.glassCard(padding:16)
                 }
+                measurementSummary
+                if !unavailable.isEmpty {
+                    DisclosureGroup("Not assessable from this image (\(unavailable.count))") {
+                        VStack(alignment:.leading,spacing:16) {
+                            ForEach(unavailable) { endpoint in
+                                VStack(alignment:.leading,spacing:6) {
+                                    HStack {
+                                        Text(endpointTitle(endpoint)).font(.subheadline.weight(.semibold))
+                                        Spacer()
+                                        Text(endpoint.status == "not_captured" ? "Not captured" : "Insufficient view").font(.caption)
+                                    }
+                                    Text(endpoint.observation).font(.caption)
+                                    Text(endpoint.limitations.joined(separator:"\n"))
+                                        .font(.caption).foregroundStyle(Theme.Colors.inkSecondary)
+                                }
+                            }
+                        }.padding(.top,12)
+                    }.font(.subheadline.weight(.semibold)).glassCard(padding:16)
+                }
+            } else {
+                measurementSummary
             }
         }
+    }
+
+    private func endpointTitle(_ endpoint: Endpoint) -> String {
+        ["scleral_chromaticity":"Scleral color",
+         "conjunctival_hyperemia":"Conjunctival vessels",
+         "palpebral_conjunctival_color":"Inner eyelid color",
+         "pupil_iris_ratio":"Pupil & iris",
+         "pupillary_light_reflex":"Pupil light response",
+         "peripheral_corneal_opacity":"Peripheral corneal appearance"][endpoint.target_id] ?? endpoint.name
+    }
+
+    private var measurementSummary: some View {
+        VStack(alignment:.leading,spacing:12) {
+            let measurements=snapshot?.geometry.measurements ?? []
+            let available=measurements.filter { $0.value?.isFinite == true && ["estimated","measured"].contains($0.status) }
+            Text("Measurements").font(.headline)
+            if available.isEmpty {
+                Text("No reliable numeric values from this image.")
+                    .font(.subheadline).foregroundStyle(Theme.Colors.inkSecondary)
+            }
+            ForEach(available) { measurement in
+                HStack(alignment:.top) {
+                    VStack(alignment:.leading,spacing:4) {
+                        Text(measurement.name == "vessel_area_fraction" ? "Candidate vessel coverage" : measurement.name == "pupil_to_iris_ratio" ? "Pupil / iris ratio" : measurement.name.replacingOccurrences(of:"_",with:" "))
+                            .font(.subheadline.weight(.semibold))
+                        Text("Local image analysis · experimental").font(.caption2).foregroundStyle(Theme.Colors.inkSecondary)
+                    }
+                    Spacer()
+                    Text(measurement.value.map { measurement.unit == "fraction" ? String(format:"%.1f%%",$0*100) : String(format:"%.3f",$0) } ?? "—")
+                        .font(.title3.bold()).monospacedDigit()
+                }
+            }
+            DisclosureGroup("Measurement details") {
+                VStack(alignment:.leading,spacing:12) {
+                    ForEach(measurements) { measurement in
+                        VStack(alignment:.leading,spacing:4) {
+                            Text(measurement.name.replacingOccurrences(of:"_",with:" ").capitalized).font(.caption.bold())
+                            Text(measurement.status.replacingOccurrences(of:"_",with:" ")+": "+measurement.reason).font(.caption)
+                        }
+                    }
+                }.padding(.top,8)
+            }.font(.caption)
+        }.glassCard(padding:16)
     }
 
     private var primaryAction: some View {

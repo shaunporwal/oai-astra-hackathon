@@ -248,3 +248,11 @@ Extended the shared Swift snapshot client with a source-mode argument (live came
 Validation: native import checks passed for EXIF orientation, whole-image aspect ratio, 960-pixel maximum dimension, GPS removal and invalid-data rejection. All 37 Python tests passed, including imported-image provenance, hash and exact-JPEG retention. Signed iPhone build passed. Physical Photos picker selection and a phone-import-to-Astra request still need an on-device smoke check. No paid API calls were made.
 
 Simulator build also passed; inspected `vision/runs/native-import-control.png` and confirmed the new import action fits on the capture page without scrolling at the checked default size.
+
+## 2026-09-10 — Findings-first structured review
+
+Replaced the flat six-target accordion with a capture-quality badge, observed-target count, visible-feature cards and a compact measurement block. Only observed targets appear in the primary feature list; all ungradable/not-captured targets are grouped under one collapsed section. Displayed numbers require a finite value and estimated/measured status, retain fraction versus dimensionless formatting, and are labeled as local experimental analysis. Missing values are not rendered as rows of dashes. Original observations and limitations remain available without rewriting clinical meaning; visual observations with no numeric result are explicitly labeled.
+
+Reduced the image thumbnail and hid routine completion prose after a successful review. Detailed methods/rejection reasons and endpoint limitations are expandable. Signed device and simulator builds passed. Inspected the modal using an existing cached six-target result: one observed feature is prominent while unavailable targets are collapsed. This changes presentation only, not API output, model prompts or measurement algorithms. No API credits were used.
+
+Installed and launched the structured-summary update on the connected iPhone after refreshing USB pairing.
