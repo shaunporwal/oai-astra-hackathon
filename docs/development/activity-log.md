@@ -264,3 +264,9 @@ Added a SwiftData model backed by SQLite in `Library/Application Support/eye-lib
 Added a Library sheet with thumbnails, dates, source and review availability. Older Documents capture JPEGs migrate idempotently without deletion and with unknown original provenance. Temporary exports support the existing share action. Fixed target-selection invalidation so restoring a different saved target does not erase its restored review. Added `docs/guides/image-library.md` covering locations, offline behavior, backups and current limits.
 
 Validation: disk-backed Swift checks passed across store recreation for image bytes, identity, source, ROI, target, snapshot and all six review targets; review invalidation retained the original image. Legacy migration repeated without duplicate rows or deleting original files. Updated Swift transport contract checks passed. Signed phone/simulator builds passed and the simulator library list was visually inspected with a migrated image. Installed and launched on the physical iPhone; device file inspection confirmed captures.store, SQLite WAL/SHM and the managed support directory exist. No API calls were made.
+
+## 2026-09-10 — Remove viewfinder labels and footer
+
+Removed the Live/Imported/Saved badge inside the camera square and the white camera-status footer beneath it. The capture card now contains only the preview/saved image and existing region/measurement overlays. Camera errors remain available in the guidance text outside the square. No capture, storage or analysis logic changed.
+
+Signed build passed; installed, refreshed pairing and launched on the connected iPhone. No API requests were made.

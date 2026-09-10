@@ -63,7 +63,7 @@ struct CaptureView: View {
                             captureCard
                                 .frame(width:min(geometry.size.width,max(160,geometry.size.height-235)))
                             if frozen == nil {
-                                Text(autoCapture ? autoHint : camera.sample?.quality.guidance ?? "Preparing camera…")
+                                Text(autoCapture ? autoHint : camera.sample?.quality.guidance ?? camera.status)
                                     .font(.subheadline).multilineTextAlignment(.center).frame(minHeight:38)
                                 HStack {
                                     Button(camera.focusLocked ? "Unlock focus" : "Lock focus") { camera.setFocusLocked(!camera.focusLocked) }
@@ -160,27 +160,14 @@ struct CaptureView: View {
     }
 
     private var captureCard: some View {
-        VStack(spacing:0) {
-            ZStack(alignment:.topLeading) {
-                if let frozen,let image=UIImage(data:frozen) {
-                    FrameCanvas(image:image,roi:$roi,analysis:snapshot?.geometry,target:target) { snapshot=nil;review=nil }
-                } else {
-                    CameraPreview(session:camera.session).background(.black)
-                }
-                Text(frozen == nil ? "LIVE · 1× WIDE" : sourceMode == "imported_image" ? "IMPORTED PHOTO" : "SAVED FRAME")
-                    .font(.system(size:10,weight:.bold)).tracking(1)
-                    .padding(10).foregroundStyle(.white).background(.black.opacity(0.6),in:Capsule())
-                    .padding(14).allowsHitTesting(false)
+        ZStack {
+            if let frozen,let image=UIImage(data:frozen) {
+                FrameCanvas(image:image,roi:$roi,analysis:snapshot?.geometry,target:target) { snapshot=nil;review=nil }
+            } else {
+                CameraPreview(session:camera.session).background(.black)
             }
-            .aspectRatio(1,contentMode:.fit).clipped()
-            HStack(spacing:8) {
-                Image(systemName:frozen == nil ? "camera" : "checkmark.circle")
-                Text(frozen == nil ? (camera.running ? "1× wide · center-square capture" : camera.status) : "Capture retained on this phone")
-                    .font(.caption)
-                Spacer(minLength:0)
-            }.padding(14)
         }
-        .background(.white.opacity(0.65))
+        .aspectRatio(1,contentMode:.fit).clipped()
         .clipShape(RoundedRectangle(cornerRadius:Theme.Radius.card))
         .overlay(RoundedRectangle(cornerRadius:Theme.Radius.card).strokeBorder(.white.opacity(0.85)))
     }
