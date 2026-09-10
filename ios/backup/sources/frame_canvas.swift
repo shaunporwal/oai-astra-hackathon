@@ -13,7 +13,7 @@ struct FrameCanvas: View {
                 Color.black
                 Image(uiImage:image).resizable().frame(width:rect.width,height:rect.height).position(x:rect.midX,y:rect.midY)
                 Canvas { context,_ in
-                    if target == "redness" {
+                    if target != "geometry" {
                         if let roi,roi.count==4 {
                             let selected=CGRect(x:rect.minX+roi[0]*rect.width,y:rect.minY+roi[1]*rect.height,width:roi[2]*rect.width,height:roi[3]*rect.height)
                             context.stroke(Path(selected),with:.color(.cyan),lineWidth:2)
@@ -28,7 +28,8 @@ struct FrameCanvas: View {
                                 path.closeSubpath();context.fill(path,with:.color(.pink.opacity(0.5)))
                             }
                         }
-                    } else if let analysis {
+                    }
+                    if target != "redness",let analysis {
                         for (fit,color) in [(analysis.pupil,Color.green),(analysis.iris,Color.pink)] {
                             guard let fit else { continue }
                             var path=Path()
@@ -44,7 +45,7 @@ struct FrameCanvas: View {
                     }
                 }
             }.contentShape(Rectangle()).gesture(DragGesture(minimumDistance:4).onChanged { gesture in
-                guard target == "redness",rect.contains(gesture.startLocation) else { return }
+                guard target != "geometry",rect.contains(gesture.startLocation) else { return }
                 let end=CGPoint(x:min(rect.maxX,max(rect.minX,gesture.location.x)),y:min(rect.maxY,max(rect.minY,gesture.location.y)))
                 let x=min(gesture.startLocation.x,end.x),y=min(gesture.startLocation.y,end.y)
                 let w=abs(end.x-gesture.startLocation.x),h=abs(end.y-gesture.startLocation.y)

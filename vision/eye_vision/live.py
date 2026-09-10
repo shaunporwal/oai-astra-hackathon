@@ -35,6 +35,7 @@ def create_app(output=None, *, session_token=None, lan_host=None):
     app.mount("/static", StaticFiles(directory=STATIC), name="static")
     review_lock = asyncio.Lock()
     frame_lock = asyncio.Lock()
+    review_jobs = {}
 
     def has_astra():
         return bool(os.environ.get("OPENAI_API_KEY")) and importlib.util.find_spec("openai") is not None
@@ -155,6 +156,52 @@ def create_app(output=None, *, session_token=None, lan_host=None):
             result = attach_measurements(result, geometry)
             existing.write_text(json.dumps(result,indent=2)+'\n')
             return result
+
+    def job_status(case):
+        folder=case_folder(case)
+        cached=folder/'endpoint-prediction.json'
+        if cached.exists():
+            return {'status':'completed','result':json.loads(cached.read_text()),'detail':None}
+        task=review_jobs.get(case)
+        if task is not None and not task.done():
+            return {'status':'running','result':None,'detail':None}
+        state=folder/'review-job.json'
+        if state.exists():
+            record=json.loads(state.read_text())
+            if record['status']=='running':
+                return {'status':'interrupted','result':None,'detail':'Mac review service restarted. Check before explicitly starting another review.'}
+            return record
+        return {'status':'not_started','result':None,'detail':None}
+
+    @app.get('/api/review-job/{case}')
+    async def review_status(case: str, request: Request):
+        authorize(request)
+        return job_status(case)
+
+    @app.post('/api/review-job/{case}')
+    async def start_review(case: str, request: Request):
+        authorize(request)
+        current=job_status(case)
+        if current['status'] in ('running','completed'):
+            return current
+        if not has_astra():
+            raise HTTPException(503,'Astra key is not configured on the Mac')
+        if review_lock.locked() or any(not task.done() for task in review_jobs.values()):
+            raise HTTPException(409,'Another review is running; check again before sending')
+        folder=case_folder(case)
+        state=folder/'review-job.json'
+        state.write_text(json.dumps({'status':'running','result':None,'detail':None}))
+        async def run_job():
+            try:
+                await review(case,request)
+                state.write_text(json.dumps({'status':'completed','result':None,'detail':None}))
+            except Exception as exc:
+                detail=exc.detail if isinstance(exc,HTTPException) else 'Review failed on the Mac'
+                state.write_text(json.dumps({'status':'failed','result':None,'detail':detail,'error_type':type(exc).__name__}))
+        task=asyncio.create_task(run_job())
+        review_jobs[case]=task
+        task.add_done_callback(lambda finished: review_jobs.pop(case,None) if review_jobs.get(case) is finished else None)
+        return {'status':'running','result':None,'detail':None}
 
     return app
 

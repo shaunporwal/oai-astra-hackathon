@@ -31,6 +31,8 @@ The machine-readable target specification is [specs/details.json](../specs/detai
 
 ## Development
 
+- [Recoverable reviews](development/review-jobs.md): timeout diagnosis, job polling and combined segmentation overlays.
+
 - [OptLab integration review](development/optlab-integration-review.md): partner branch, reuse plan and shared-client bridge.
 
 - [Measurement contract](development/measurement-contract.md): shared analysis API and module boundaries.

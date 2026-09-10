@@ -270,3 +270,11 @@ Validation: disk-backed Swift checks passed across store recreation for image by
 Removed the Live/Imported/Saved badge inside the camera square and the white camera-status footer beneath it. The capture card now contains only the preview/saved image and existing region/measurement overlays. Camera errors remain available in the guidance text outside the square. No capture, storage or analysis logic changed.
 
 Signed build passed; installed, refreshed pairing and launched on the connected iPhone. No API requests were made.
+
+## 2026-09-10 — Recover timed-out reviews and combine local analysis
+
+Investigated recent mobile cases and found completed six-target Astra results despite phone timeouts; one measured latency was 62.26 seconds. Implemented authenticated Mac review-job start/status routes, per-case deduplication, persistent job state and cached-result-first retrieval. Phone requests now poll with short timeouts and explicit URLSession request/resource settings. Reopened library records check their saved backend case before uploading another snapshot. Polling failures do not automatically resubmit a model request.
+
+Removed the native conjunctival/pupil mode selector for new captures, added combined local analysis and displayed existing pupil/iris candidate boundaries plus available vessel masks together on saved-image/review canvases. Vessel analysis still needs a selected conjunctival region; no automatic tissue segmentation or Astra pixel-mask generation is claimed. Detailed design/limits and the official documentation consulted are in `docs/development/review-jobs.md`.
+
+Validation: 39 Python tests passed, including delayed-job deduplication, cache recovery, failure/interrupted status and combined analysis. Signed phone build passed and the updated app was installed/launched after restarting the Mac service and refreshing pairing. A native Swift client recovered a recent completed real six-target result without an OpenAI submission. No API credits were used for this fix.

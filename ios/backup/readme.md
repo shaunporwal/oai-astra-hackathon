@@ -96,3 +96,7 @@ The review popup leads with capture quality, observed features and available num
 ### Image library
 
 **Library** reopens saved images and completed assessments offline. SwiftData/SQLite and managed image files live under `Library/Application Support/eye-library` in the phone app container, with CloudKit disabled. Earlier Documents captures are imported once without deleting originals. New captures, imports and analyses persist automatically. See [image library](../../docs/guides/image-library.md) for storage and network behavior.
+
+### Combined analysis and recoverable reviews
+
+New captures assess pupil/iris and conjunctival vessels together; the old target selector is removed. Optionally mark conjunctiva for vessel coverage. The saved-frame and popup views show available experimental geometry/vessel overlays together. The phone now starts a Mac review job and polls for its result, recovering cached responses first after a timeout. See [review jobs](../../docs/development/review-jobs.md).

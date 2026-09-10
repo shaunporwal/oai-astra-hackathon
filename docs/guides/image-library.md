@@ -16,7 +16,7 @@ Export creates a temporary JPEG for the share sheet. Original Photos assets are 
 
 ## Offline and network behavior
 
-Browsing images and saved reviews works offline. New Astra requests still require the Mac backend and internet access. Sending an image also retains a backend case on the Mac under `vision/runs/mobile/`; adding a phone database does not remove those copies. Reopened incomplete cases create a fresh backend snapshot before a new review, avoiding stale server case IDs. Completed phone-cached reviews reopen locally.
+Browsing images and saved reviews works offline. New Astra requests still require the Mac backend and internet access. Sending an image also retains a backend case on the Mac under `vision/runs/mobile/`; adding a phone database does not remove those copies. Reopened incomplete cases check their saved backend case first and recover an existing result or running job. A fresh snapshot is created only if that case no longer exists. Completed phone-cached reviews reopen locally.
 
 The library keeps the latest analysis/settings for each image rather than a full version history. Saving happens on capture/import, during analysis, and before replacing/reopening an image. File-save failures are reported rather than pretending persistence succeeded. This milestone does not add cloud sync, patient accounts, multi-device sharing or a deletion UI.
 

@@ -23,3 +23,5 @@ Users can also choose an existing image with the system Photos picker. Imported 
 Review results now prioritize observed-feature cards and compact, unit-formatted local measurements. Unassessable targets and lengthy limitations are collapsed; no new diagnoses, values or API requests are introduced by the presentation change.
 
 An on-device SwiftData/SQLite library now retains captured/imported images and their latest analysis for offline reopening. Older app JPEGs migrate once without deletion. Disk-reopen, review roundtrip and idempotent migration checks passed; the signed update was installed/launched and database files confirmed on the iPhone. CloudKit is disabled; new Astra requests still use the Mac backend.
+
+Mobile Astra review now uses deduplicated Mac background jobs with short status polling and cached-result recovery, fixing the case where the phone times out while the server finishes successfully. New native captures use combined pupil/iris and region-based vessel analysis with shared overlays. 39 Python tests and a native recovery check passed without a paid request.

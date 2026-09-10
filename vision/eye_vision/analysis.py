@@ -14,7 +14,7 @@ def validate_options(options=None):
     if not isinstance(options,dict) or set(options)-{'target','roi'}:
         raise ValueError('Unknown analysis options')
     target=options.get('target','geometry')
-    if target not in ('geometry','redness'):raise ValueError('Unknown capture target')
+    if target not in ('geometry','redness','combined'):raise ValueError('Unknown capture target')
     roi=options.get('roi')
     if roi is not None:
         if not isinstance(roi,list) or len(roi)!=4 or any(type(v) not in (int,float) or not math.isfinite(v) for v in roi):
@@ -28,7 +28,7 @@ def validate_options(options=None):
 def analyze_frame(frame, options=None):
     options=validate_options(options)
     result=analyze_geometry(frame)
-    redness=analyze_redness(frame,options['roi'] if options['target']=='redness' else None)
+    redness=analyze_redness(frame,options['roi'] if options['target'] in ('redness','combined') else None)
     assessment=result['ratio_assessment'];value=result['pupil_to_iris_ratio']
     ratio=Measurement('pupil_iris_ratio','pupil_to_iris_ratio','dimensionless',value,
         'estimated' if value is not None else 'ungradable',assessment['reason'],

@@ -10,7 +10,7 @@ struct CaptureView: View {
     @Environment(\.scenePhase) private var scenePhase
     @State private var pairingText=""
     @State private var pairing: Pairing?
-    @State private var target="redness"
+    @State private var target="combined"
     @State private var roi: [Double]?
     @State private var frozen: Data?
     @State private var localFile: URL?
@@ -73,13 +73,9 @@ struct CaptureView: View {
                                 Text("Auto checks sharpness, exposure and stability; it does not verify eye anatomy.")
                                     .font(.caption2).foregroundStyle(Theme.Colors.inkSecondary).multilineTextAlignment(.center)
                             } else {
-                                Picker("Measurement",selection:Binding(get:{target},set:{ target=$0;roi=nil;snapshot=nil;review=nil })) {
-                                    Text("Conjunctival vessels").tag("redness")
-                                    Text("Pupil / iris").tag("geometry")
-                                }.pickerStyle(.segmented)
-                                Text(target == "redness" ? "Optional: drag over conjunctiva to include vessel measurements." : "Send this saved frame for Astra assessment.")
+                                Text("Pupil, iris and vessels are assessed together. Optionally mark exposed conjunctiva for vessel measurements.")
                                     .font(.caption).foregroundStyle(Theme.Colors.inkSecondary).multilineTextAlignment(.center)
-                                if roi != nil { Button("Clear region") { roi=nil;snapshot=nil;review=nil }.font(.caption) }
+                                if roi != nil { Button("Clear region") { target="combined";roi=nil;snapshot=nil;review=nil }.font(.caption) }
                             }
                             Spacer(minLength:0)
                         }.frame(maxWidth:.infinity)
@@ -162,7 +158,7 @@ struct CaptureView: View {
     private var captureCard: some View {
         ZStack {
             if let frozen,let image=UIImage(data:frozen) {
-                FrameCanvas(image:image,roi:$roi,analysis:snapshot?.geometry,target:target) { snapshot=nil;review=nil }
+                FrameCanvas(image:image,roi:$roi,analysis:snapshot?.geometry,target:"combined") { target="combined";snapshot=nil;review=nil }
             } else {
                 CameraPreview(session:camera.session).background(.black)
             }
@@ -190,9 +186,13 @@ struct CaptureView: View {
                     ScrollView {
                         VStack(alignment:.leading,spacing:16) {
                             if let frozen,let image=UIImage(data:frozen) {
-                                Image(uiImage:image).resizable().scaledToFit()
-                                    .frame(maxWidth:220,maxHeight:150).clipShape(RoundedRectangle(cornerRadius:18))
-                                    .frame(maxWidth:.infinity).accessibilityLabel("Captured frame sent for assessment")
+                                FrameCanvas(image:image,roi:.constant(roi),analysis:snapshot?.geometry,target:"combined",changed:{})
+                                    .frame(height:180).allowsHitTesting(false)
+                                    .accessibilityLabel("Captured image with experimental segmentation overlays")
+                                if snapshot != nil {
+                                    Text("Candidate outlines: pupil green · iris pink · vessels shaded. Only available fits are shown.")
+                                        .font(.caption2).foregroundStyle(Theme.Colors.inkSecondary)
+                                }
                             }
                             if busy { ProgressView("Reviewing your saved frame…").frame(maxWidth:.infinity) }
                             if review == nil { Text(message).font(.subheadline).accessibilityIdentifier("status") }
@@ -418,7 +418,7 @@ struct CaptureView: View {
                         Button("Measure locally · no API credits") {
                             settingsPresented=false;reviewPresented=true
                             Task { await analyze(includeAstra:false) }
-                        }.disabled(!canAnalyze || (target == "redness" && roi == nil))
+                        }.disabled(!canAnalyze)
                     }
                 }
                 Section("Camera") {
@@ -505,7 +505,7 @@ struct CaptureView: View {
         guard let data=jpeg else { return }
         persistCurrent();activeRecord=nil;backendCaseCurrent=false
         cancelAutoCapture()
-        sourceMode=source
+        sourceMode=source;target="combined"
         frozen=data;roi=nil;snapshot=nil;review=nil;camera.stop()
         do {
             let record=try library.save(jpeg:data,sourceMode:source,target:target)
@@ -519,6 +519,17 @@ struct CaptureView: View {
         busy=true;defer { busy=false;persistCurrent() }
         let client=AnalysisClient(pairing:pairing)
         do {
+            if includeAstra,let saved=snapshot, !backendCaseCurrent {
+                do {
+                    let state=try await client.reviewStatus(caseID:saved.case_id)
+                    backendCaseCurrent=true
+                    if let result=state.result {
+                        review=result;message="Recovered the saved Astra review. No new request was made.";return
+                    }
+                } catch AnalysisClient.ClientError.http(let status,_) where status == 404 {
+                    snapshot=nil
+                }
+            }
             if snapshot == nil || !backendCaseCurrent {
                 message="Measuring the saved frame on your Mac…"
                 snapshot=try await client.snapshot(jpeg:frozen,options:AnalysisOptions(target:target,roi:roi),sourceMode:sourceMode)
@@ -526,7 +537,7 @@ struct CaptureView: View {
                 persistCurrent()
             }
             if includeAstra,let snapshot {
-                message="Astra is reviewing the saved frame…"
+                message="Astra is reviewing the saved frame. You can close this popup; the Mac keeps processing."
                 review=try await client.review(caseID:snapshot.case_id)
                 message="Assessment complete. Expand an endpoint for findings and limitations."
             } else {
@@ -534,7 +545,7 @@ struct CaptureView: View {
                 message="Local analysis complete. No Astra call was made."
             }
         } catch {
-            message=snapshot == nil ? "Analysis failed: \(error.localizedDescription)" : "Local measurements retained. Astra review failed: \(error.localizedDescription). No automatic retry was made."
+            message=snapshot == nil ? "Analysis failed: \(error.localizedDescription)" : "Local measurements retained. \(error.localizedDescription). Reopen this review to check the Mac’s saved result."
         }
     }
 }
