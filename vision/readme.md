@@ -47,4 +47,13 @@ open runs/phone-001/contact_sheet.jpg
 eye-astra runs/phone-001/manifest.json --case-id phone-001
 ```
 
-The last command validates locally and sends nothing. Live Astra review requires `OPENAI_API_KEY`, `--send`, and `--output`. It assesses capture usability, not disease. See the [iPhone runbook](../docs/iphone-runbook.md), [evaluation guide](../docs/evaluation.md), and [activity log](../docs/activity-log.md).
+The last command validates locally and sends nothing. Live Astra review requires a key (`oai_api_key` or `OPENAI_API_KEY` in root `.env`, or `OPENAI_API_KEY` in the shell), `--send`, and `--output`. It assesses capture usability, not disease. See the [iPhone runbook](../docs/guides/iphone-runbook.md), [evaluation guide](../docs/research/evaluation.md), and [activity log](../docs/development/activity-log.md).
+
+## Live camera dashboard (v0.3)
+
+```sh
+pip install -e '.[astra,live]'
+eye-live
+```
+
+Open `http://127.0.0.1:8765` on the Mac. Allow camera access, choose the iPhone Continuity Camera, and start the stream. See the [live demo guide](../docs/guides/live-demo.md) for setup, snapshot review, and limitations. This shows experimental pupil candidates and capture quality; diagnosis remains unconfigured.

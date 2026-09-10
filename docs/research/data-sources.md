@@ -4,9 +4,9 @@ Research checked on 2026-09-10. No patient dataset or diagnostic weights have be
 
 ## Immediate data
 
-Use original iPhone 15 Pro recordings for capture-quality development. Store originals under ignored `vision/data/` and exports under ignored `vision/runs/`. Keep subject identifiers pseudonymous and document permission, capture conditions, and whether remote analysis is permitted in the local data record. Keep API-upload permission distinct from permission to record. Raw footage is not a Git artifact.
+Use original iPhone 15 Pro recordings for capture-quality development. Store originals under ignored root `data/` and exports under ignored `vision/runs/`. Keep subject identifiers pseudonymous and document permission, capture conditions, and whether remote analysis is permitted in the local data record. Keep API-upload permission distinct from permission to record. Raw footage is not a Git artifact.
 
-Start with the [annotation template](../vision/examples/labels.template.jsonl) and [evaluation rubric](evaluation.md). Capture-quality labels are human visual judgments; disease labels must come from appropriate clinical reference evidence. The user's own recording can exercise ingestion but cannot establish disease-classification accuracy.
+Start with the [annotation template](../../vision/examples/labels.template.jsonl) and [evaluation rubric](evaluation.md). Capture-quality labels are human visual judgments; disease labels must come from appropriate clinical reference evidence. The user's own recording can exercise ingestion but cannot establish disease-classification accuracy.
 
 ## Candidate resources
 
@@ -27,3 +27,7 @@ Record the source URL/version, license/access terms, image modality/device, pati
 ## Decisions still needed
 
 Select the first clinical finding/condition and identify an expert/reference-label source. Then prioritize one matching dataset and a separate phone test set. Until then, the executable benchmark is capture usability, and segmentation/diagnosis remain explicitly unconfigured.
+
+## First acquired recording: capture setup correction
+
+The first supplied iPhone 15 Pro recording uses a user-reported 15× macro lens attachment. Its local provenance sidecar is `data/img_2377.capture.json`. Use `capture_type=phone_with_macro_attachment` if independently annotating this case. The generic unassisted-phone annotation template does not describe this recording. Do not infer physical dimensions from the attachment rating or generalize this sample's detail to unaided-phone video.

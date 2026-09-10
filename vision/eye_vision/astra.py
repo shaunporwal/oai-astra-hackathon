@@ -10,6 +10,8 @@ from typing import Literal
 
 from pydantic import BaseModel, ConfigDict
 
+from .config import configure_api_key
+
 TASK = "capture_usability_v1"
 PROMPT_VERSION = "capture-review-v1"
 PROMPT = """Review these selected frames from one phone eye-video recording for a research capture-quality experiment.
@@ -127,6 +129,7 @@ def main():
         if args.output is None or args.output.exists():
             raise ValueError("Provide --output pointing to a new prediction JSON file")
         args.output.parent.mkdir(parents=True, exist_ok=True)
+        configure_api_key()
         result = analyze(args.manifest, args.case_id, model=args.model)
         with args.output.open("x") as handle:
             handle.write(json.dumps(result, indent=2, allow_nan=False) + "\n")

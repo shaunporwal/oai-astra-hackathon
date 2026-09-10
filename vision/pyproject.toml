@@ -4,19 +4,24 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "eye-vision"
-version = "0.2.0"
+version = "0.3.0"
 description = "Local eye video capture and model integration pipeline"
 requires-python = ">=3.11"
-dependencies = ["opencv-python>=4.12,<5", "numpy>=2,<3"]
+dependencies = ["opencv-python>=4.12,<5", "numpy>=2,<3", "python-dotenv>=1,<2"]
 
 [project.optional-dependencies]
 astra = ["openai>=2,<3", "pydantic>=2,<3"]
+live = ["fastapi>=0.115,<1", "uvicorn>=0.30,<1", "httpx>=0.27,<1"]
 
 [project.scripts]
 eye-vision = "eye_vision.cli:main"
 eye-prepare = "eye_vision.prepare:main"
 eye-astra = "eye_vision.astra:main"
 eye-eval = "eye_vision.evaluate:main"
+eye-live = "eye_vision.live:main"
 
 [tool.setuptools.packages.find]
 include = ["eye_vision*"]
+
+[tool.setuptools.package-data]
+eye_vision = ["static/*.html", "static/*.js", "static/*.css"]

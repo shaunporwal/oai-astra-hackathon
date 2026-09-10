@@ -1,0 +1,327 @@
+{
+  "schema_version": "1.0",
+  "document_type": "literature_grounded_research_target_specification",
+  "reviewed_on": "2026-09-10",
+  "provenance": {
+    "original_source": "specs/details.csv",
+    "origin_main_commit": "050076daef3a0d86ef81852d8a307b4b5fbea09c",
+    "original_csv_preserved": true,
+    "note": "This replaces the prior verbatim JSON conversion. Original clinical claims remain only in the source CSV/history."
+  },
+  "interpretation": "Evidence supports particular measurements in specified studies; it does not prove universal diagnostic performance. Requirements/priorities and current-clip assessments are project judgments, not literature results.",
+  "setup": {
+    "device": "iPhone 15 Pro",
+    "attachment": "user-reported 15x macro lens",
+    "evidence_for_exact_combination": "Not established by the cited studies."
+  },
+  "output_policy": {
+    "missing_measurements": "Use null with an explicit not_measured, ungradable, or not_calibrated status; never invent numeric values.",
+    "clinical_inference": "Do not map image measurements directly to disease diagnoses.",
+    "evaluation": "Use independent references and participant-level splits; model-generated predictions are not ground truth."
+  },
+  "targets": [
+    {
+      "id": "scleral_chromaticity",
+      "name": "Calibrated scleral chromaticity",
+      "original_csv_row": 1,
+      "implementation_priority": 3,
+      "research_status": "conditional_research_measurement",
+      "measurements": [
+        {
+          "name": "scleral_chromaticity_xy",
+          "unit": "dimensionless",
+          "definition": "Summarize calibrated CIE xy in a valid scleral ROI, excluding vessels and reflections.",
+          "evidence_status": "Related calibrated colorimetry approach studied in L02; exact ROI summary must be prespecified."
+        },
+        {
+          "name": "scleral_lab_b_star",
+          "unit": "CIELAB b*",
+          "definition": "Optional descriptive feature after a defined color transform and white point.",
+          "evidence_status": "Project exploratory feature; not itself a validated bilirubin estimator."
+        }
+      ],
+      "literature_ids": [
+        "L02"
+      ],
+      "supported_statement": "Calibrated smartphone scleral color has shown association with measured bilirubin in a cirrhosis cohort.",
+      "claims_not_supported_for_this_project": [
+        "Uncalibrated b* directly measures bilirubin.",
+        "This system diagnoses hepatitis, cirrhosis, or obstruction from a video."
+      ],
+      "capture_requirements": [
+        "Device/attachment-specific color calibration and controlled documented illumination.",
+        "Sufficient scleral coverage; exclude clipping, glare, vessels and eyelids.",
+        "Preserve documented color encoding/exposure; validate processing across recordings."
+      ],
+      "validation_reference": [
+        "Paired serum bilirubin and independent subject-held-out testing.",
+        "Repeat-capture error and prediction agreement, not correlation alone."
+      ],
+      "current_clip_assessment": {
+        "basis": "project engineering judgment from manual review, not a published result",
+        "status": "uncalibrated_and_insufficiently_standardized"
+      },
+      "validated_on_our_iphone_15_pro_15x_setup": false,
+      "qualified_clinical_trial_endpoint": false
+    },
+    {
+      "id": "conjunctival_hyperemia",
+      "name": "Conjunctival vessel coverage and redness",
+      "original_csv_row": 2,
+      "implementation_priority": 2,
+      "research_status": "conditional_research_measurement",
+      "measurements": [
+        {
+          "name": "vessel_area_fraction",
+          "unit": "fraction",
+          "definition": "Segmented vessel pixels / valid conjunctival ROI pixels.",
+          "evidence_status": "L04 tested vessel-density associations with expert redness grades."
+        },
+        {
+          "name": "vessel_tortuosity",
+          "unit": "dimensionless",
+          "definition": "Vessel centerline path length / endpoint distance, with defined segment selection and aggregation.",
+          "evidence_status": "Distinct from area fraction; weak association with grading in L04; secondary exploratory feature."
+        }
+      ],
+      "literature_ids": [
+        "L04"
+      ],
+      "supported_statement": "Automated vessel coverage can correlate with manual hyperemia grading in slit-lamp photographs.",
+      "claims_not_supported_for_this_project": [
+        "Redness alone diagnoses dry eye or allergy.",
+        "Vessel tortuosity and red-pixel fraction are the same measurement.",
+        "This metric is already a validated primary endpoint for anti-inflammatory trials."
+      ],
+      "capture_requirements": [
+        "Standardized conjunctival region, exposure, white balance and illumination.",
+        "Resolve vessels; exclude iris, eyelids, reflections and out-of-focus tissue."
+      ],
+      "validation_reference": [
+        "Independent conjunctiva/vessel masks and expert redness grades.",
+        "Subject-held-out mask accuracy, grading agreement and repeatability."
+      ],
+      "current_clip_assessment": {
+        "basis": "project engineering judgment from manual review, not a published result",
+        "status": "requires_dedicated_conjunctival_capture_and_validation"
+      },
+      "validated_on_our_iphone_15_pro_15x_setup": false,
+      "qualified_clinical_trial_endpoint": false
+    },
+    {
+      "id": "palpebral_conjunctival_color",
+      "name": "Palpebral conjunctival color for anemia research",
+      "original_csv_row": 3,
+      "implementation_priority": 4,
+      "research_status": "requires_different_anatomical_view",
+      "measurements": [
+        {
+          "name": "palpebral_conjunctival_color_features",
+          "unit": "method_defined",
+          "definition": "Use an explicitly specified color-feature method on inner-eyelid tissue; do not substitute sclera.",
+          "evidence_status": "L03 tested RAW conjunctival color-based hemoglobin estimation; no estimator implemented here."
+        }
+      ],
+      "literature_ids": [
+        "L03"
+      ],
+      "supported_statement": "Smartphone inner-eyelid imaging has been investigated for anemia estimation against laboratory hemoglobin, with material individual error.",
+      "claims_not_supported_for_this_project": [
+        "Scleral whiteness is a validated anemia endpoint.",
+        "Reduced a* or vessel visibility directly measures perfusion.",
+        "The prototype replaces laboratory hemoglobin testing."
+      ],
+      "capture_requirements": [
+        "A separately designed protocol exposing palpebral conjunctiva, with suitable clinical input.",
+        "Document color capture, illumination and tissue ROI."
+      ],
+      "validation_reference": [
+        "Paired laboratory hemoglobin and independent subject-held-out cases.",
+        "Report sensitivity/specificity at defined thresholds and hemoglobin error/agreement."
+      ],
+      "current_clip_assessment": {
+        "basis": "project engineering judgment from manual review, not a published result",
+        "status": "required_tissue_not_adequately_captured"
+      },
+      "validated_on_our_iphone_15_pro_15x_setup": false,
+      "qualified_clinical_trial_endpoint": false
+    },
+    {
+      "id": "pupil_iris_ratio",
+      "name": "Pupil-to-visible-iris diameter ratio",
+      "original_csv_row": 4,
+      "implementation_priority": 1,
+      "research_status": "first_geometry_prototype",
+      "measurements": [
+        {
+          "name": "pupil_to_iris_ratio",
+          "unit": "dimensionless",
+          "definition": "D_pupil_px / D_visible_iris_px, using a consistent fitted-diameter convention.",
+          "evidence_status": "Normalized pupil/limbus sizing is used in L01; our segmentation must be validated."
+        }
+      ],
+      "literature_ids": [
+        "L01"
+      ],
+      "supported_statement": "Smartphone recordings can support normalized pupil measurements under a defined capture protocol.",
+      "claims_not_supported_for_this_project": [
+        "A population mean iris diameter of 11.8 mm is individual calibration.",
+        "The 15x lens rating provides mm-per-pixel scale.",
+        "Pupil ratio alone diagnoses drug toxicity or autonomic disease."
+      ],
+      "capture_requirements": [
+        "Visible pupil/limbus boundaries with sufficient focus and limited reflection/occlusion.",
+        "Document gaze and lighting; reject incomplete or unreliable fits."
+      ],
+      "validation_reference": [
+        "Independent boundary annotations and ratio measurements.",
+        "Geometric error, repeatability and agreement across subjects/sessions."
+      ],
+      "current_clip_assessment": {
+        "basis": "project engineering judgment from manual review, not a published result",
+        "status": "candidate_frames_available_not_yet_measured"
+      },
+      "validated_on_our_iphone_15_pro_15x_setup": false,
+      "qualified_clinical_trial_endpoint": false
+    },
+    {
+      "id": "pupillary_light_reflex",
+      "name": "Stimulus-aligned pupillary light response",
+      "original_csv_row": 5,
+      "implementation_priority": 3,
+      "research_status": "requires_new_capture_protocol",
+      "measurements": [
+        {
+          "name": "percent_constriction",
+          "unit": "percent",
+          "definition": "100 * (D_baseline - D_min) / D_baseline; baseline is a defined pre-response interval tied to stimulus timing.",
+          "evidence_status": "Response amplitude supported under L01 protocol; not spontaneous max/min over an arbitrary movie."
+        },
+        {
+          "name": "normalized_constriction_velocity",
+          "unit": "ratio_per_second",
+          "definition": "Negative time derivative of pupil-to-iris ratio during a prespecified constriction interval.",
+          "evidence_status": "Project extension requiring validation; not a validated L01 clinical diagnostic output."
+        },
+        {
+          "name": "response_latency",
+          "unit": "milliseconds",
+          "definition": "Time from known stimulus onset to a prespecified detected constriction onset.",
+          "evidence_status": "Requires independent timing validation; L01 did not compare latency between systems."
+        },
+        {
+          "name": "absolute_constriction_velocity",
+          "unit": "millimeters_per_second",
+          "definition": "Negative derivative of calibrated physical pupil diameter.",
+          "evidence_status": "Disabled until individual spatial calibration and temporal validation exist."
+        }
+      ],
+      "literature_ids": [
+        "L01"
+      ],
+      "supported_statement": "A controlled iPhone study demonstrated agreement for pupil response measurements against infrared pupillometry.",
+      "claims_not_supported_for_this_project": [
+        "Untimed ordinary video establishes a light reflex.",
+        "Sparse selected stills recover reliable response velocity.",
+        "This prototype diagnoses concussion, brainstem injury, or cranial nerve III dysfunction."
+      ],
+      "capture_requirements": [
+        "Defined stimulus intensity/duration/onset and ambient adaptation protocol.",
+        "Full temporal sequence, reliable frame timestamps, validated sampling rate and blink rejection.",
+        "Do not improvise intense-light exposure; establish an appropriate protocol with clinical input."
+      ],
+      "validation_reference": [
+        "Synchronized reference pupillometer and agreement analyses.",
+        "Separate clinical cohorts and diagnostic references for any later disease claim."
+      ],
+      "current_clip_assessment": {
+        "basis": "project engineering judgment from manual review, not a published result",
+        "status": "no_documented_stimulus_not_a_validated_plr_recording"
+      },
+      "validated_on_our_iphone_15_pro_15x_setup": false,
+      "qualified_clinical_trial_endpoint": false
+    },
+    {
+      "id": "peripheral_corneal_opacity",
+      "name": "Peripheral corneal opacity / arcus appearance",
+      "original_csv_row": 6,
+      "implementation_priority": 4,
+      "research_status": "exploratory_appearance_target",
+      "measurements": [
+        {
+          "name": "expert_referenced_arcus_presence",
+          "unit": "categorical",
+          "definition": "Present / absent / ungradable relative to independent clinical grading.",
+          "evidence_status": "Clinical arcus was assessed in L05; automated macro detection is a project proposal."
+        },
+        {
+          "name": "peripheral_opacity_extent",
+          "unit": "method_defined",
+          "definition": "Proposed visible circumferential extent after peripheral-cornea localization and glare exclusion.",
+          "evidence_status": "Exploratory; the imported luminance-ring index has not been validated by the cited study."
+        }
+      ],
+      "literature_ids": [
+        "L05"
+      ],
+      "supported_statement": "Arcus is a clinically observed corneal finding; its cardiovascular association is population-dependent and can be explained by age.",
+      "claims_not_supported_for_this_project": [
+        "A bright limbal ring is necessarily arcus.",
+        "Image luminance quantifies cholesterol or cardiovascular risk.",
+        "The iris boundary itself is arcus."
+      ],
+      "capture_requirements": [
+        "Visible peripheral cornea with controlled illumination and sufficient coverage.",
+        "Distinguish glare and other opacity patterns using expert labels."
+      ],
+      "validation_reference": [
+        "Independent clinical/slit-lamp arcus grading for appearance detection.",
+        "Separate lipid measurements and outcome cohorts for any systemic-risk hypothesis."
+      ],
+      "current_clip_assessment": {
+        "basis": "project engineering judgment from manual review, not a published result",
+        "status": "no_arcus_label_or_measurement_established"
+      },
+      "validated_on_our_iphone_15_pro_15x_setup": false,
+      "qualified_clinical_trial_endpoint": false
+    }
+  ],
+  "references": [
+    {
+      "id": "L01",
+      "citation": "McAnany JJ, Smith BM, Garland A, Kagen SL. iPhone-based Pupillometry: A Novel Approach for Assessing the Pupillary Light Reflex. Optometry and Vision Science. 2018;95(10):953–958.",
+      "doi": "10.1097/OPX.0000000000001289",
+      "url": "https://doi.org/10.1097/OPX.0000000000001289",
+      "full_text_url": "https://pmc.ncbi.nlm.nih.gov/articles/PMC6166694/"
+    },
+    {
+      "id": "L02",
+      "citation": "Nixon-Hill M, Mookerjee RP, Leung TS. Assessment of bilirubin levels in patients with cirrhosis via forehead, sclera and lower eyelid smartphone images. PLOS Digital Health. 2023;2(10):e0000357.",
+      "doi": "10.1371/journal.pdig.0000357",
+      "url": "https://doi.org/10.1371/journal.pdig.0000357",
+      "full_text_url": "https://journals.plos.org/digitalhealth/article?id=10.1371/journal.pdig.0000357"
+    },
+    {
+      "id": "L03",
+      "citation": "Zhao L, Vidwans A, Bearnot CJ, et al. Prediction of anemia in real-time using a smartphone camera processing conjunctival images. PLOS ONE. 2024;19(5):e0302883.",
+      "doi": "10.1371/journal.pone.0302883",
+      "url": "https://doi.org/10.1371/journal.pone.0302883",
+      "full_text_url": "https://journals.plos.org/plosone/article?id=10.1371/journal.pone.0302883"
+    },
+    {
+      "id": "L04",
+      "citation": "Wong D, Ng Y, Eppenberger LS, et al. Conjunctival Vascular Metrics Using Automated Vessel Detection from Slit Lamp Images for Hyperemia Severity Assessment. Diagnostics. 2026;16(13):2066.",
+      "doi": "10.3390/diagnostics16132066",
+      "url": "https://doi.org/10.3390/diagnostics16132066",
+      "full_text_url": "https://pmc.ncbi.nlm.nih.gov/articles/PMC13359948/"
+    },
+    {
+      "id": "L05",
+      "citation": "Fernandez AB, Keyes MJ, Pencina M, D'Agostino R, O'Donnell CJ, Thompson PD. Relation of corneal arcus to cardiovascular disease (from the Framingham Heart Study data set). American Journal of Cardiology. 2009;103(1):64–66.",
+      "doi": "10.1016/j.amjcard.2008.08.030",
+      "url": "https://doi.org/10.1016/j.amjcard.2008.08.030",
+      "full_text_url": "https://pmc.ncbi.nlm.nih.gov/articles/PMC2636700/"
+    }
+  ],
+  "presentation_reference_file": "docs/research/literature-review.md"
+}

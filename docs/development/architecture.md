@@ -61,3 +61,16 @@ OpenAI references: [image inputs](https://developers.openai.com/api/docs/guides/
 ## Segmentation and diagnosis
 
 Both remain `not_configured`. `EyeModel` remains an extension point in the original crop pipeline; the close-up workflow preserves candidate images for a future segmenter. Do not fabricate anatomical masks using a dark-pixel threshold or call ROI rectangles segmentation. Choose anatomy, reference masks, and a target condition first, then evaluate a dedicated segmenter or prompted model against those references.
+
+## Live browser demo (v0.3)
+
+`eye-live` serves static browser assets and FastAPI endpoints on loopback. Browser `getUserMedia` provides a selected Mac camera, including an available iPhone Continuity Camera. No Swift code is involved. A video-file replay mode is labeled separately.
+
+- `POST /api/frame`: bounded JPEG input, transient local analysis with `geometry.py`; no automatic frame persistence.
+- `POST /api/snapshot`: save a frame and geometry with capture-mode provenance.
+- `POST /api/review/{case}`: review the saved frame via the existing Astra adapter; API key required.
+- `GET /api/status`: model availability and diagnosis state.
+
+Mutating/image requests require the page's random session token; accepted hostnames and server binding restrict the service to local development. One frame computation and one model review can run at a time. This is a prototype interface rather than a deployed mobile API.
+
+The new `dark_region_ellipse_v1` estimator thresholds the central image region, rejects border-touching/poorly shaped candidates, and ranks elliptical dark regions by contrast and edge strength. It does not verify eye presence or segment the iris. Candidates and unavailable outputs are shown explicitly.

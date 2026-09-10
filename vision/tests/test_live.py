@@ -1,0 +1,80 @@
+import hashlib
+import json
+from pathlib import Path
+import re
+import tempfile
+import unittest
+from unittest.mock import patch
+
+import cv2
+import numpy as np
+
+from eye_vision.geometry import analyze_frame
+try:
+    from fastapi.testclient import TestClient
+    from eye_vision.live import create_app
+    LIVE = True
+except ImportError:
+    LIVE = False
+
+
+class GeometryTests(unittest.TestCase):
+    def test_uniform_frame_abstains(self):
+        result=analyze_frame(np.full((300,400,3),120,dtype=np.uint8))
+        self.assertIsNone(result['pupil'])
+        self.assertIsNone(result['pupil_to_iris_ratio'])
+        self.assertEqual(result['diagnosis']['status'],'not_configured')
+
+    def test_known_dark_circle_localizes(self):
+        frame=np.full((300,400,3),180,dtype=np.uint8)
+        cv2.circle(frame,(200,150),30,(20,20,20),-1)
+        result=analyze_frame(frame)
+        self.assertIsNotNone(result['pupil'])
+        np.testing.assert_allclose(result['pupil']['center_xy'],[200,150],atol=2)
+        self.assertAlmostEqual(result['pupil']['diameter_px'],60,delta=5)
+
+    def test_dark_border_is_not_a_pupil(self):
+        frame=np.full((300,400,3),180,dtype=np.uint8)
+        frame[:80]=0
+        self.assertIsNone(analyze_frame(frame)['pupil'])
+
+
+@unittest.skipUnless(LIVE,'Install .[live] to run dashboard tests')
+class LiveTests(unittest.TestCase):
+    def setUp(self):
+        self.temp=tempfile.TemporaryDirectory()
+        self.addCleanup(self.temp.cleanup)
+        self.root=Path(self.temp.name)
+        self.client=TestClient(create_app(self.root))
+        self.addCleanup(self.client.close)
+        html=self.client.get('/').text
+        self.token=re.search(r'name="session-token" content="([^"]+)"',html).group(1)
+        self.headers={'x-live-token':self.token,'content-type':'image/jpeg','x-source-mode':'recorded_video'}
+        _, data=cv2.imencode('.jpg',np.full((120,160,3),128,dtype=np.uint8))
+        self.data=data.tobytes()
+
+    def test_frame_requires_session_and_valid_image(self):
+        self.assertEqual(self.client.post('/api/frame',content=self.data).status_code,403)
+        self.assertEqual(self.client.post('/api/frame',content=b'bad',headers=self.headers).status_code,422)
+        self.assertEqual(self.client.post('/api/frame',content=b'x'*2_000_001,headers=self.headers).status_code,413)
+        result=self.client.post('/api/frame',content=self.data,headers=self.headers)
+        self.assertEqual(result.status_code,200)
+        self.assertIsNone(result.json()['pupil'])
+        self.assertEqual(list(self.root.iterdir()),[])
+
+    def test_snapshot_hashes_provenance_and_no_key(self):
+        response=self.client.post('/api/snapshot',content=self.data,headers=self.headers)
+        self.assertEqual(response.status_code,200)
+        case=response.json()['case_id']
+        manifest=json.loads((self.root/case/'manifest.json').read_text())
+        self.assertEqual(manifest['capture_mode'],'recorded_video')
+        self.assertEqual(manifest['source_type'],'single_frame')
+        self.assertEqual(manifest['source_sha256'],hashlib.sha256(self.data).hexdigest())
+        with patch.dict('os.environ',{'OPENAI_API_KEY':''}):
+            self.assertEqual(self.client.post(f'/api/review/{case}',headers=self.headers).status_code,503)
+        self.assertFalse((self.root/case/'prediction.json').exists())
+        self.assertEqual(self.client.get(f'/api/snapshot/{case}').status_code,403)
+        self.assertEqual(self.client.get(f'/api/snapshot/{case}',headers=self.headers).content,self.data)
+
+    def test_remote_hosts_rejected(self):
+        self.assertEqual(self.client.get('/',headers={'host':'evil.example'}).status_code,400)
