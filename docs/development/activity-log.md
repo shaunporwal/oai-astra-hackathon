@@ -140,3 +140,7 @@ Replaced the long dashboard with a viewport-sized desktop layout. Camera and cap
 Browser checks with long offline observation fixtures passed at 1440×900, 1280×720 and 1024×768 without document scrolling or horizontal overflow. Mobile 390×844 had no horizontal overflow and intentionally used vertical scrolling. Endpoint expansion worked without JavaScript errors. No API calls or backend changes were made.
 
 Added `docs/research/clinical-value.md` with primary studies on patient-operated capture, iPhone macro imaging and corneal-opacity diagnostic accuracy, plus a target-by-target assessment. Corrected the bilirubin literature summary to state that the reported regression was fit/evaluated on the same sample. Recommended guided imaging for a clinician-defined workflow as the first clinical-value hypothesis; current app outputs remain unvalidated.
+
+## 2026-09-10 — Select the first clinical workflow
+
+Selected clinician-supervised ocular redness follow-up as the first clinical workflow hypothesis, with guided acquisition and independently graded capture adequacy as the initial evaluation. Documented why vessel coverage is a candidate metric and why current pupil geometry is only supporting engineering work. Clarified rear camera versus straight-on viewing angle. No runtime behavior changed and no API requests were made.
