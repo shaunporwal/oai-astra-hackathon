@@ -525,8 +525,20 @@ struct CaptureView: View {
         do {
             let status=try await AnalysisClient(pairing:pairing).connection()
             connectionMessage=status.astra_available ? "Mac connected · Astra configured" : "Mac connected · Astra key not configured"
+            recordConnectionDiagnostic(error:nil)
         } catch {
-            connectionMessage="Mac connection failed · check Wi-Fi and pairing in Settings"
+            connectionMessage="Mac connection failed · check Wi-Fi and Local Network permission in iPhone Settings"
+            recordConnectionDiagnostic(error:error)
+        }
+    }
+    private func recordConnectionDiagnostic(error: Error?) {
+        // Local development diagnostics contain no token, image or model response.
+        let failure=error as NSError?
+        let record: [String:Any] = ["connected":error == nil,"server":pairing?.server_url ?? "",
+            "error_domain":failure?.domain ?? "","error_code":failure?.code ?? 0,
+            "timestamp":ISO8601DateFormatter().string(from:Date())]
+        if let data=try? JSONSerialization.data(withJSONObject:record) {
+            try? data.write(to:FileManager.default.temporaryDirectory.appendingPathComponent("connection-status.json"),options:.atomic)
         }
     }
     private func loadUSBPairing() {
