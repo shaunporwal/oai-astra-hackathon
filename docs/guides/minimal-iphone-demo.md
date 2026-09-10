@@ -1,6 +1,6 @@
 # Minimal iPhone macro demo
 
-Use the independent native client in `ios/backup` with the existing Python backend. Partner UI integration can wait. The flow is live rear-camera preview → save one frame → mark conjunctival region (or select pupil/iris) → **Analyze + Ask Astra** → expand endpoint results.
+Use the independent native client in `ios/backup` with the existing Python backend. Partner UI integration can wait. The flow is live rear-camera preview → save one frame → mark conjunctival region (or select pupil/iris) → **Send to Astra** → expand endpoint results.
 
 ## Current installation step
 
@@ -29,12 +29,12 @@ Open the top-right **Settings** button and paste into **Mac connection** on the 
 ## Capture and assess
 
 1. Put the external 15× attachment over the **rear main/wide camera**, used at 1×. Check preview for correct lens placement, focus and reflections. Stop Mac Continuity Camera use before opening the native camera.
-2. Tap **Capture frame** manually, or **Auto capture when sharp** to wait for local sharpness/exposure/stability checks (20-second timeout, no API cost). This freezes a 960×960 center-square JPEG from video, matching the square viewfinder; it does not record a temporal video sequence or take a full-resolution still.
+2. Choose **Manual** and tap **Capture frame**, or use **Auto · quality**, which automatically waits for local sharpness/exposure/stability checks (20-second timeout, no API cost). This freezes a 960×960 center-square JPEG from video, matching the square viewfinder; it does not record a temporal video sequence or take a full-resolution still.
 3. Optionally drag a rectangle over exposed conjunctiva to include candidate vessel measurements, excluding iris, skin and eyelids. Astra can review the saved frame without a region; local-only vessel measurement needs one. For pupil/iris mode, a region is not needed.
-4. Tap **Analyze + Ask Astra**. The Mac measures the saved JPEG, then sends that same frame for structured Astra review. Expand endpoint results and local measurements to inspect output.
+4. Tap **Send to Astra**. The Mac measures the saved JPEG, then sends that same frame for structured Astra review. The popup shows your captured image and assessment; scroll inside it for details. Tap outside or use Close to return to the capture page.
 5. Use **Retake** in the top header to start another capture. No background Astra loop is running. Completed assessments disable the main action; a failed review retains its saved case for explicit retry. Server-cached successful reviews do not incur another request. A failed or interrupted upstream request may still be billed.
 
-The optional **Measure locally · no API credits** action on Review runs measurements without an Astra request. Captured JPEGs can be exported from the phone; backend cases and structured JSON are stored under ignored `vision/runs/mobile/`.
+The optional **Settings → Measure locally · no API credits** action runs measurements without an Astra request. Captured JPEGs can be exported from the phone; backend cases and structured JSON are stored under ignored `vision/runs/mobile/`.
 
 ## What the demo demonstrates
 
@@ -44,4 +44,4 @@ Installation succeeded. Launch after trust succeeded. Camera alignment through t
 
 ## Astra connection status
 
-The app now checks the authenticated Mac connection at startup and after pairing. **Mac connected · Astra configured** means the phone reached the backend and the backend has an API key/SDK configured; it does not verify API balance or key validity upstream. Use **Settings → Check connection · no API credits** to retry after allowing Local Network access or changing Wi-Fi. The bottom **Analyze + Ask Astra** action sends the saved frame through the Mac to Astra. **Measure locally** intentionally makes no API request. The root `.env` alias `oai_api_key` is supported; restart the Mac service and refresh phone pairing after changing the key.
+The app now checks the authenticated Mac connection at startup and after pairing. **Mac connected · Astra configured** means the phone reached the backend and the backend has an API key/SDK configured; it does not verify API balance or key validity upstream. Use **Settings → Check connection · no API credits** to retry after allowing Local Network access or changing Wi-Fi. The bottom **Send to Astra** action sends the saved frame through the Mac to Astra. **Measure locally** intentionally makes no API request. The root `.env` alias `oai_api_key` is supported; restart the Mac service and refresh phone pairing after changing the key.

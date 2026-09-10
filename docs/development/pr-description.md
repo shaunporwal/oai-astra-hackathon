@@ -15,3 +15,5 @@ The backup and prepared partner-UI bridge share one Swift API client. The instal
 - Segmentation and endpoint measurements remain experimental. Clinical evaluation needs suitable targeted captures and independent reference labels.
 
 The native live screen now fits without scrolling at the checked default simulator size, with Retake pinned in the header after capture. Optional automatic capture uses local, unvalidated sharpness/exposure/stability gates and retains the exact best JPEG from a stable window; it cancels after 20 seconds and never calls Astra. Selector checks and signed/simulator builds passed. Physical macro-lens behavior requires a device smoke check.
+
+The latest native UX removes numbered steps: Manual/Auto capture stays on one page, Retake is pinned at the top, and Send to Astra opens a dismissible modal containing the captured image and internally scrollable assessment. Requests continue when the modal is dismissed, and reopening a pending/completed assessment does not submit again.

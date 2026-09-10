@@ -230,3 +230,11 @@ Added an explicit **Auto capture when sharp** action using native grayscale shar
 Validation: Swift checks passed for sharpness/blur, dark/clipped exposure, focus settling, motion rejection, timing gaps, reset and exact best-frame retention. Signed device and simulator builds passed. Installed on the connected iPhone and refreshed pairing, but iOS blocked launch because the phone was locked; requested unlock. On-device automatic-capture behavior with the macro attachment remains to be checked. No API credits were used.
 
 After the user unlocked the phone, launching the installed auto-capture update succeeded.
+
+## 2026-09-10 — Single capture page and dismissible Astra popup
+
+Removed numbered Capture/Review/Results navigation. One fixed capture page now offers Manual and Auto quality modes; Auto is selected and armed initially, and Retake re-arms it when selected. A captured frame remains on that page with Retake at the top, optional target/region selection and **Send to Astra** at the bottom. Sending opens a bounded modal immediately with the exact captured image, loading/error state and expandable results in its own scroll view. The image thumbnail is height-limited so results are reachable without scrolling through a full portrait image. Tapping the backdrop or Close dismisses the popup. Reopening during/completed review does not submit again; an explicit retry is offered after failure. Frame/options mutation is disabled during an active request. Local-only analysis moved to Settings.
+
+Signed phone and simulator builds passed. Added a Debug simulator-only layout loader for existing ignored image/response artifacts; it is excluded from device builds and does not call APIs. Inspected the modal with a prior real assessment, showing bounded height, retained frame and the close control. Layout artifacts remain in `vision/runs/`. No additional Astra requests were made.
+
+Installed the final single-page/modal build, refreshed USB pairing and successfully launched it on the physical iPhone. Modal screenshot inspection used a cached prior assessment and made no API request.

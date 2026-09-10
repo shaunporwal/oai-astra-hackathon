@@ -17,7 +17,8 @@ struct CaptureView: View {
     @State private var exposure=0.0
 
     @State private var settingsPresented=false
-    @State private var stage=0
+    @State private var reviewPresented=false
+    @State private var captureMode="auto"
     @State private var connectionMessage="Checking Mac connection…"
     @State private var checkingConnection=false
 
@@ -29,24 +30,28 @@ struct CaptureView: View {
     private var canAnalyze: Bool {
         frozen != nil && pairing != nil && !busy
     }
-    private var stageTitle: String { stage == 0 ? "Bring your eye into focus" : stage == 1 ? "Review your capture" : "Your frame assessment" }
-    private var stageDetail: String {
-        stage == 0 ? "Rear wide camera · external 15× macro lens" : stage == 1 ? (target == "redness" ? "Drag over exposed conjunctiva to mark the analysis region." : "Check that the pupil and outer iris are clearly visible.") : "Findings apply to this saved frame only."
-    }
-
     var body: some View {
         NavigationStack {
             ZStack {
                 AmbientBackground()
                 VStack(spacing:10) {
                     header.padding(.horizontal,20)
-                    if stage == 0 {
-                        GeometryReader { geometry in
-                            VStack(spacing:10) {
-                                Text("Center the eye · rear camera + 15× lens")
-                                    .font(.subheadline.weight(.semibold))
-                                captureCard
-                                    .frame(width:min(geometry.size.width, max(160,geometry.size.height-235)))
+                    GeometryReader { geometry in
+                        VStack(spacing:10) {
+                            if frozen == nil {
+                                Picker("Capture mode",selection:$captureMode) {
+                                    Text("Manual").tag("manual")
+                                    Text("Auto · quality").tag("auto")
+                                }.pickerStyle(.segmented)
+                                    .onChange(of:captureMode) { _,mode in
+                                        if mode == "auto" { armAutoCapture() } else { cancelAutoCapture() }
+                                    }
+                            } else {
+                                Text("Captured · ready to send").font(.headline)
+                            }
+                            captureCard
+                                .frame(width:min(geometry.size.width,max(160,geometry.size.height-235)))
+                            if frozen == nil {
                                 Text(autoCapture ? autoHint : camera.sample?.quality.guidance ?? "Preparing camera…")
                                     .font(.subheadline).multilineTextAlignment(.center).frame(minHeight:38)
                                 HStack {
@@ -54,37 +59,37 @@ struct CaptureView: View {
                                     Spacer()
                                     Text("Local quality check").foregroundStyle(Theme.Colors.inkSecondary)
                                 }.font(.caption).frame(minHeight:32)
-                                Text("Checks sharpness, exposure and stability; does not verify eye anatomy.")
+                                Text("Auto checks sharpness, exposure and stability; it does not verify eye anatomy.")
                                     .font(.caption2).foregroundStyle(Theme.Colors.inkSecondary).multilineTextAlignment(.center)
-                                Spacer(minLength:0)
-                            }.frame(maxWidth:.infinity)
-                        }.padding(.horizontal,20)
-                    } else {
-                        ScrollView {
-                            VStack(alignment:.leading,spacing:16) {
-                                stagePicker
-                                Text(stageTitle).font(Theme.Typography.title)
-                                Text(stageDetail).font(.subheadline).foregroundStyle(Theme.Colors.inkSecondary)
-                                if stage == 1 { captureCard;reviewControls }
-                                if stage == 2 { results }
-                                if busy { ProgressView().frame(maxWidth:.infinity) }
-                                Text(message).font(.footnote).foregroundStyle(Theme.Colors.inkSecondary)
-                                    .accessibilityIdentifier("status")
-                                Text("Research prototype · measurements are unvalidated and do not establish a diagnosis.")
-                                    .font(.caption2).foregroundStyle(Theme.Colors.inkSecondary)
-                            }.padding(20)
-                        }
-                    }
-                }.padding(.top,8).disabled(busy)
+                            } else {
+                                Picker("Measurement",selection:$target) {
+                                    Text("Conjunctival vessels").tag("redness")
+                                    Text("Pupil / iris").tag("geometry")
+                                }.pickerStyle(.segmented)
+                                    .onChange(of:target) { _,_ in roi=nil;snapshot=nil;review=nil }
+                                Text(target == "redness" ? "Optional: drag over conjunctiva to include vessel measurements." : "Send this saved frame for Astra assessment.")
+                                    .font(.caption).foregroundStyle(Theme.Colors.inkSecondary).multilineTextAlignment(.center)
+                                if roi != nil { Button("Clear region") { roi=nil;snapshot=nil;review=nil }.font(.caption) }
+                            }
+                            Spacer(minLength:0)
+                        }.frame(maxWidth:.infinity)
+                    }.padding(.horizontal,20)
+                }.padding(.top,8).disabled(busy || reviewPresented)
             }
             .foregroundStyle(Theme.Colors.ink)
             .toolbar(.hidden,for:.navigationBar)
-            .safeAreaInset(edge:.bottom,spacing:0) { primaryAction }
+            .safeAreaInset(edge:.bottom,spacing:0) { primaryAction.disabled(reviewPresented) }
+            .overlay { if reviewPresented { reviewModal } }
             .sheet(isPresented:$settingsPresented) { settings }
         }
         .tint(Theme.Colors.info)
         .preferredColorScheme(.light)
-        .task { loadUSBPairing();camera.start();await checkConnection() }
+        .task {
+            #if DEBUG && targetEnvironment(simulator)
+            if loadLayoutFixture() { return }
+            #endif
+            loadUSBPairing();camera.start();if captureMode == "auto" { armAutoCapture() };await checkConnection()
+        }
         .onChange(of:scenePhase) { _,phase in if phase != .active { cancelAutoCapture();camera.stop() } else if frozen == nil { camera.start() } }
         .onChange(of:settingsPresented) { _,shown in if shown { cancelAutoCapture() } }
         .onReceive(camera.$sample) { sample in
@@ -127,22 +132,6 @@ struct CaptureView: View {
         }
     }
 
-    private var stagePicker: some View {
-        HStack(spacing:4) {
-            ForEach(0..<3) { index in
-                Button { stage=index } label: {
-                    HStack(spacing:5) {
-                        Text("\(index+1)").font(.caption.bold())
-                        Text(["Capture","Review","Results"][index]).font(.subheadline.weight(.semibold))
-                    }.frame(maxWidth:.infinity).padding(.vertical,12)
-                        .background(stage == index ? Color.white : Color.clear,in:Capsule())
-                        .foregroundStyle(stage == index ? Theme.Colors.ink : Theme.Colors.inkSecondary)
-                }.buttonStyle(.plain)
-                    .disabled(index == 0 ? frozen != nil : index == 1 ? frozen == nil : snapshot == nil)
-            }
-        }.padding(4).background(.white.opacity(0.35),in:Capsule())
-    }
-
     private var captureCard: some View {
         VStack(spacing:0) {
             ZStack(alignment:.topLeading) {
@@ -169,27 +158,48 @@ struct CaptureView: View {
         .overlay(RoundedRectangle(cornerRadius:Theme.Radius.card).strokeBorder(.white.opacity(0.85)))
     }
 
-    private var reviewControls: some View {
-        VStack(alignment:.leading,spacing:14) {
-            Text("Choose an assessment").font(.headline)
-            Picker("Measurement",selection:$target) {
-                Text("Conjunctival vessels").tag("redness")
-                Text("Pupil / iris").tag("geometry")
-            }.pickerStyle(.segmented)
-                .onChange(of:target) { _,_ in roi=nil;snapshot=nil;review=nil }
-            if target == "redness" {
-                Text("Exclude iris, skin and eyelids. Selected anatomy is not automatically verified.")
-                    .font(.caption).foregroundStyle(Theme.Colors.inkSecondary)
-                if roi != nil { Button("Clear region") { roi=nil;snapshot=nil;review=nil } }
-            }
-            HStack {
-                Spacer()
-                if let localFile { ShareLink(item:localFile) { Label("Export",systemImage:"square.and.arrow.up") } }
-            }.font(.subheadline.weight(.semibold)).frame(minHeight:44)
-            Divider()
-            Button("Measure locally · no API credits") { Task { await analyze(includeAstra:false) } }
-                .font(.subheadline).disabled(!canAnalyze || (target == "redness" && roi == nil))
-        }.glassCard()
+    private var reviewModal: some View {
+        GeometryReader { geometry in
+            ZStack {
+                Color.black.opacity(0.4).ignoresSafeArea()
+                    .onTapGesture { reviewPresented=false }
+                    .accessibilityLabel("Dismiss review")
+                VStack(spacing:0) {
+                    HStack {
+                        Text("Astra review").font(.title2.bold())
+                        Spacer()
+                        Button { reviewPresented=false } label: {
+                            Image(systemName:"xmark.circle.fill").font(.title2).frame(width:44,height:44)
+                        }.accessibilityLabel("Close review")
+                    }.padding(.horizontal,20).padding(.top,10)
+                    Divider()
+                    ScrollView {
+                        VStack(alignment:.leading,spacing:16) {
+                            if let frozen,let image=UIImage(data:frozen) {
+                                Image(uiImage:image).resizable().scaledToFit()
+                                    .frame(maxWidth:280,maxHeight:220).clipShape(RoundedRectangle(cornerRadius:18))
+                                    .frame(maxWidth:.infinity).accessibilityLabel("Captured frame sent for assessment")
+                            }
+                            if busy { ProgressView("Reviewing your saved frame…").frame(maxWidth:.infinity) }
+                            Text(message).font(.subheadline).accessibilityIdentifier("status")
+                            if snapshot != nil { results }
+                            if !busy && review == nil {
+                                Button("Send to Astra") { Task { await analyze(includeAstra:true) } }
+                                    .buttonStyle(PrimaryButtonStyle()).disabled(!canAnalyze)
+                            }
+                            if let localFile { ShareLink(item:localFile) { Label("Export captured image",systemImage:"square.and.arrow.up") } }
+                            Text("Research prototype. Measurements are unvalidated and do not establish a diagnosis.")
+                                .font(.caption).foregroundStyle(Theme.Colors.inkSecondary)
+                        }.padding(20)
+                    }
+                }
+                .frame(width:max(0,geometry.size.width-32),height:geometry.size.height*0.86)
+                .background(Theme.Colors.skyBottom,in:RoundedRectangle(cornerRadius:28))
+                .clipShape(RoundedRectangle(cornerRadius:28))
+                .shadow(radius:24)
+                .accessibilityAddTraits(.isModal)
+            }.frame(maxWidth:.infinity,maxHeight:.infinity)
+        }
     }
 
     private var results: some View {
@@ -197,7 +207,7 @@ struct CaptureView: View {
             HStack {
                 Chip(text:review == nil ? "Local analysis" : "Astra reviewed",tone:.info,systemImage:"sparkles")
                 Spacer()
-                Button("View frame") { stage=1 }.font(.subheadline.weight(.semibold))
+
             }
             if let snapshot {
                 DisclosureGroup("Candidate measurements",isExpanded:$measurementsExpanded) {
@@ -238,31 +248,19 @@ struct CaptureView: View {
 
     private var primaryAction: some View {
         VStack(spacing:8) {
-            if stage == 0 {
-                Button {
-                    if autoCapture { cancelAutoCapture() }
-                    else { captureGate.reset();autoStarted=Date();autoHint="Waiting for sharp, stable detail…";autoCapture=true }
-                } label: {
-                    Label(autoCapture ? "Cancel auto capture" : "Auto capture when sharp",systemImage:autoCapture ? "stop.circle" : "viewfinder")
-                        .frame(maxWidth:.infinity,minHeight:44)
-                }.buttonStyle(.bordered).disabled(camera.latestJPEG == nil)
-                Text(autoCapture || !autoHint.isEmpty ? autoHint : connectionMessage)
-                    .font(.caption2).lineLimit(2).multilineTextAlignment(.center)
-            }
-            if busy {
-                Text("Processing your saved frame…").font(.caption)
-            } else if stage != 0 && review == nil {
-                Text(pairing == nil ? "Open settings to pair with your Mac." : target == "redness" && roi == nil ? "Astra can review this frame. Mark a region to also measure vessels. Uses API credits." : "Uploads this frame to OpenAI · uses API credits")
-                    .font(.caption).multilineTextAlignment(.center)
-            }
+            Text(frozen == nil ? (autoCapture || !autoHint.isEmpty ? autoHint : connectionMessage) : busy ? "Astra request in progress · tap to view" : review != nil ? "Assessment saved · tap to reopen" : "Sends this frame to OpenAI · uses API credits")
+                .font(.caption).lineLimit(2).multilineTextAlignment(.center)
             Button {
-                if stage == 0 { capture(jpeg:camera.latestJPEG) }
-                else if review != nil { retake() }
-                else { Task { await analyze(includeAstra:true) } }
+                if frozen != nil {
+                    reviewPresented=true
+                    if !busy && review == nil { Task { await analyze(includeAstra:true) } }
+                } else if captureMode == "manual" { capture(jpeg:camera.latestJPEG) }
+                else if autoCapture { cancelAutoCapture();autoHint="Auto capture paused" }
+                else { armAutoCapture() }
             } label: {
-                Label(stage == 0 ? "Capture frame" : review != nil ? "New capture" : "Analyze + Ask Astra",systemImage:stage == 0 ? "camera.fill" : review != nil ? "arrow.counterclockwise" : "sparkles")
+                Label(frozen != nil ? (review != nil || busy ? "View Astra review" : "Send to Astra") : captureMode == "manual" ? "Capture frame" : autoCapture ? "Pause auto capture" : "Start auto capture",systemImage:frozen != nil ? "sparkles" : captureMode == "manual" ? "camera.fill" : "viewfinder")
             }.buttonStyle(PrimaryButtonStyle())
-                .disabled(busy || (stage == 0 ? camera.latestJPEG == nil : review == nil && !canAnalyze))
+                .disabled(frozen == nil ? (captureMode == "manual" && camera.latestJPEG == nil) : pairing == nil && review == nil && !busy)
         }.padding(.horizontal,20).padding(.top,12).padding(.bottom,8)
             .background(.ultraThinMaterial)
     }
@@ -282,12 +280,20 @@ struct CaptureView: View {
                     Button("Use pairing configuration") {
                         do {
                             pairing=try JSONDecoder().decode(Pairing.self,from:Data(pairingText.utf8))
-                            snapshot=nil;review=nil;pairingText="";stage=frozen == nil ? 0 : 1
+                            snapshot=nil;review=nil;pairingText=""
                             message="Pairing loaded. Analyze a frame to test the connection."
                             settingsPresented=false
                             Task { await checkConnection() }
                         } catch { message="Invalid pairing JSON. Paste the full configuration from the Mac.";settingsPresented=false }
                     }.disabled(pairingText.isEmpty)
+                }
+                if frozen != nil {
+                    Section("Optional local measurement") {
+                        Button("Measure locally · no API credits") {
+                            settingsPresented=false;reviewPresented=true
+                            Task { await analyze(includeAstra:false) }
+                        }.disabled(!canAnalyze || (target == "redness" && roi == nil))
+                    }
                 }
                 Section("Camera") {
                     Text("Rear physical wide · 1× · external 15× attachment").font(.subheadline)
@@ -304,10 +310,26 @@ struct CaptureView: View {
 
     private func retake() {
         cancelAutoCapture();autoHint=""
-        frozen=nil;localFile=nil;roi=nil;snapshot=nil;review=nil;stage=0
+        frozen=nil;localFile=nil;roi=nil;snapshot=nil;review=nil;reviewPresented=false
         message="Position the macro attachment and capture when detail is sharp."
         camera.start()
+        if captureMode == "auto" { armAutoCapture() }
     }
+    #if DEBUG && targetEnvironment(simulator)
+    // Optional local artifacts for layout inspection; unavailable in device builds.
+    private func loadLayoutFixture() -> Bool {
+        guard CommandLine.arguments.contains("--layout-review") || CommandLine.arguments.contains("--layout-captured") else { return false }
+        let directory=FileManager.default.temporaryDirectory
+        struct Fixture: Decodable { let snapshot: Snapshot;let review: Review }
+        guard let data=try? Data(contentsOf:directory.appendingPathComponent("layout-review.json")),
+              let fixture=try? JSONDecoder().decode(Fixture.self,from:data),
+              let jpeg=try? Data(contentsOf:directory.appendingPathComponent("layout-frame.jpg")) else { return false }
+        frozen=jpeg;snapshot=fixture.snapshot;review=fixture.review
+        message="Layout inspection · previously saved assessment"
+        reviewPresented=CommandLine.arguments.contains("--layout-review")
+        return true
+    }
+    #endif
     @MainActor private func checkConnection() async {
         guard !checkingConnection else { return }
         guard let pairing else { connectionMessage="Mac not paired · open Settings to connect Astra";return }
@@ -332,11 +354,15 @@ struct CaptureView: View {
             message="USB pairing could not be loaded. Paste the pairing configuration below."
         }
     }
+    private func armAutoCapture() {
+        guard frozen == nil else { return }
+        captureGate.reset();autoStarted=Date();autoHint="Waiting for sharp, stable detail…";autoCapture=true
+    }
     private func cancelAutoCapture() { autoCapture=false;captureGate.reset() }
     private func capture(jpeg: Data?) {
         guard let data=jpeg else { return }
         cancelAutoCapture()
-        frozen=data;roi=nil;snapshot=nil;review=nil;stage=1;camera.stop()
+        frozen=data;roi=nil;snapshot=nil;review=nil;camera.stop()
         do {
             let directory=FileManager.default.urls(for:.documentDirectory,in:.userDomainMask)[0]
             let url=directory.appendingPathComponent("capture-\(UUID().uuidString.lowercased()).jpg")
@@ -356,10 +382,9 @@ struct CaptureView: View {
             if includeAstra,let snapshot {
                 message="Astra is reviewing the saved frame…"
                 review=try await client.review(caseID:snapshot.case_id)
-                stage=2
                 message="Assessment complete. Expand an endpoint for findings and limitations."
             } else {
-                measurementsExpanded=true;stage=2
+                measurementsExpanded=true
                 message="Local analysis complete. No Astra call was made."
             }
         } catch {
