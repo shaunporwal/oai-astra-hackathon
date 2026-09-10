@@ -1,10 +1,10 @@
-# OptLab integration bridge
+# Archived OptLab integration bridge
 
-Inspected partner branch `origin/feat/optlab-guided-eye-imaging`, commit `f98f3b7824fcb771736248af3e02f3cae33e00f4`. This folder is an integration seam, not a merged or fully wired OptLab app. The partner branch is unchanged.
+Inspected partner branch `origin/feat/optlab-guided-eye-imaging`, commit `f98f3b7824fcb771736248af3e02f3cae33e00f4`. This folder is an integration seam, not a merged or fully wired OptLab app. The original prototype is preserved under `archive/optlab-uiux-2026-09-10`. The working submission app is now [ios/backup](../../backup/readme.md); the bridge below is retained as an optional historical integration seam, not a runtime dependency.
 
 ## Reuse boundary
 
-Use OptLab's navigation, capture controller, voice/haptic guidance, eye/visit identity and review screens as the prospective main native UI. Keep its immediate local alignment/quality loop for acquisition feedback. Use our Python service for the research endpoint definitions, local measurement outputs, Astra observations and stored evidence. The browser remains an engineering console and the backup app a fallback.
+The original integration proposal was to use OptLab's navigation, capture controller, voice/haptic guidance, eye/visit identity and review screens as the prospective main native UI. Keep its immediate local alignment/quality loop for acquisition feedback. Use our Python service for the research endpoint definitions, local measurement outputs, Astra observations and stored evidence. The browser remains an engineering console and the backup app a fallback.
 
 `ios/shared/analysis_client.swift` is now shared transport/model code used by the backup project. Add that file and `optlab_analysis_bridge.swift` to the OptLab target without copying their contents. The bridge references the partner's existing `EyeCapture`, `Eye` and `ImageStore` types. It normalizes/resizes a copy of the original image to a 960-pixel JPEG, preserves the original, and returns the OptLab capture ID and eye alongside the backend case.
 

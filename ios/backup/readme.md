@@ -8,7 +8,7 @@ SwiftUI/AVFoundation client with visual components adapted from the partner OptL
 - Native live preview, autofocus/lock and bounded exposure compensation. No automatic torch or lens switching.
 - Capture the most recent video frame, center-cropped to a square and encoded as a 960×960 JPEG. This is a video-frame capture, not full-resolution still photography or saved video recording.
 - Retain captured/imported JPEGs and assessments in the on-device SwiftData library, with export through the share sheet.
-- Mark a normalized conjunctival rectangle on the captured image, or choose pupil/iris mode.
+- Run combined pupil/iris analysis and optionally mark a normalized conjunctival rectangle for vessel measurements.
 - Send the exact JPEG/options to the shared Python snapshot endpoint. Display native overlays and local measurements.
 - Explicit **Send to Astra** action for local measurement followed by the existing six-target assessment. An optional local-only dropdown uses no API credits. No OpenAI credential is stored on the phone. No automatic API requests or retry loops.
 
@@ -25,7 +25,7 @@ DEVELOPER_DIR=/Applications/Xcode.app/Contents/Developer xcodebuild \
   CODE_SIGNING_ALLOWED=NO build
 ```
 
-The unsigned build passed with Xcode 26.6 / iOS SDK 26.5. Both the direct target build and the device-destination scheme build now work after installation of the Xcode components. An unsigned build cannot be installed on the phone. The connected iPhone 15 Pro is paired and Developer Mode is enabled. A subsequent signed scheme build and USB installation succeeded with the user’s Personal Team. iOS blocked the first launch pending developer trust; camera behavior remains untested.
+The unsigned build passed with Xcode 26.6 / iOS SDK 26.5. Both the direct target build and the device-destination scheme build now work after installation of the Xcode components. An unsigned build cannot be installed on the phone. The connected iPhone 15 Pro is paired and Developer Mode is enabled. A subsequent signed scheme build and USB installation succeeded with the user’s Personal Team. Developer trust was subsequently enabled; signed installation, launch and native capture-to-analysis operation were exercised on the connected iPhone. Automatic capture reliability remains under development.
 
 ## Install on your phone
 
@@ -53,11 +53,11 @@ pbcopy < vision/runs/mobile/mobile-pairing.json
 
 Open the top-right **Settings** button. Use Universal Clipboard or another private transfer to paste the full JSON into **Mac connection** on the phone, then tap **Use pairing configuration**. Pairing lives in app memory and must be re-entered after app termination. The server regenerates the token on every restart. Pairing files and captures are Git-ignored; the file is mode 0600. The remote root page does not reveal a session token, and analysis endpoints require the pairing token. Redirects are refused by the native client.
 
-On the single capture page, choose Manual or Auto mode. After capture, optionally select a region and tap **Send to Astra** for local measurement followed by endpoint review. Use **Settings → Measure locally · no API credits** to inspect the overlay without an Astra request. Results apply to the captured image; changing the target or region invalidates the old local result. Failed reviews retain the saved case for explicit retry, and completed assessments disable the main action. The current model remains experimental and does not establish a diagnosis. See the [minimal demo guide](../../docs/guides/minimal-iphone-demo.md).
+On the single capture page, choose Manual or Auto mode. After capture, optionally select a region and tap **Send to Astra** for local measurement followed by endpoint review. Use **Settings → Measure locally · no API credits** to inspect the overlay without an Astra request. Results apply to the captured image; changing the target or region invalidates the old local result. Failed reviews retain the saved case for explicit retry, and completed assessments reopen through the main action. The current model remains experimental and does not establish a diagnosis. See the [minimal demo guide](../../docs/guides/minimal-iphone-demo.md).
 
 ## Verification
 
-Swift SDK typecheck and unsigned device build passed. A native Foundation contract executable decoded a real Python-generated synthetic snapshot response and round-tripped normalized ROI options. The Python suite contains 35 tests, including remote token non-disclosure, host restrictions and authenticated phone-style JPEG analysis. The user subsequently installed the simulator/platform components. The physical iPhone app was signed and installed. Signature verification and device inclusion in the provisioning profile passed. First launch requires developer trust in iPhone Settings → General → VPN & Device Management; UI gestures, focus behavior, exposure changes and local-network permission flows still require the device smoke check above.
+Swift SDK typecheck and unsigned device build passed. A native Foundation contract executable decoded a real Python-generated synthetic snapshot response and round-tripped normalized ROI options. The Python suite now contains 43 tests, including remote token non-disclosure, host restrictions and authenticated phone-style JPEG analysis. The user subsequently installed the simulator/platform components. The physical iPhone app was signed and installed. Signature verification and device inclusion in the provisioning profile passed. First launch requires developer trust in iPhone Settings → General → VPN & Device Management; UI gestures, focus behavior, exposure changes and local-network permission flows still require the device smoke check above.
 
 Apple references: [AVCam camera app](https://developer.apple.com/documentation/avfoundation/avcam-building-a-camera-app), [capture-device configuration](https://developer.apple.com/documentation/avfoundation/avcapturedevice/lockforconfiguration()), [local network privacy](https://developer.apple.com/documentation/technotes/tn3179-understanding-local-network-privacy), [local networking ATS key](https://developer.apple.com/documentation/bundleresources/information-property-list/nsapptransportsecurity/nsallowslocalnetworking).
 

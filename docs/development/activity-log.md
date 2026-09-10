@@ -302,3 +302,7 @@ The Mac backend responded to authenticated connection checks and reported Astra 
 ### Connectivity restored
 
 After the user reconnected the phone, refreshed pairing and relaunched OptoLab. The phone’s own authenticated connection check succeeded at 2026-09-10 21:05:21 UTC against air.local:8766 (connected=true, error_code=0). The exact intervening network/settings change is unknown. No paid model request was needed to verify connectivity.
+
+## 2026-09-10 — Hackathon README and branch consolidation
+
+Rewrote the root README around OptoLab’s implemented iPhone-to-Astra demo, testable reports, local image library, architecture, setup and evidence. Explicitly documented current Mac/network dependence, manual-capture recommendation, unvalidated clinical performance and planned features. Refreshed the PR description and outdated native/bridge guide statements. Merged origin/main’s two uploaded example images into the integration branch without conflict. All 43 Python tests and browser selector checks passed; root README links resolve. The partner prototype has unique unmerged source, so preserve its exact f98f3b7 commit under archive/optlab-uiux-2026-09-10 before deleting its development branch. Main will receive the complete tested integration by fast-forward.
