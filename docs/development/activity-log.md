@@ -144,3 +144,11 @@ Added `docs/research/clinical-value.md` with primary studies on patient-operated
 ## 2026-09-10 — Select the first clinical workflow
 
 Selected clinician-supervised ocular redness follow-up as the first clinical workflow hypothesis, with guided acquisition and independently graded capture adequacy as the initial evaluation. Documented why vessel coverage is a candidate metric and why current pupil geometry is only supporting engineering work. Clarified rear camera versus straight-on viewing angle. No runtime behavior changed and no API requests were made.
+
+## 2026-09-10 — Orthogonal redness measurement module
+
+Added pure `measurements.redness` candidate-vessel segmentation and a shared dataclass value contract. `analysis.py` orchestrates existing geometry and the new region-based measurement for all live/snapshot/review paths, validates options, and writes analysis/mask artifacts. Endpoint attachment now joins measurements generically by target/name; old adapter names and response fields remain compatible. Browser annotation rendering and stable-window retention are shared rather than duplicated.
+
+Added an independent conjunctival-vessel capture mode with manual normalized ROI selection, region-local detail and appearance-stability checks, live candidate coverage, mask overlays, and saved options/masks. The ROI is user-designated and anatomy is not verified. No automatic tissue segmentation, clinical grade, longitudinal change interpretation, Swift changes or paid API requests were introduced.
+
+Validation: 34 Python tests and Node selector checks passed. Synthetic vessel masks exceeded 0.9 Dice against known red-line shapes; denominator accounting, grayscale negatives, blur/darkness/tiny-region rejection, invalid options, saved-region persistence and endpoint integration passed. Browser simulated-camera selection, region drag/clear, mode switch, annotated save and 1280×720 layout passed without JavaScript errors. Synthetic browser snapshot coverage was 5.1%; this is fixture output, not a patient result. A real prepared-image ROI produced zero candidates at low local detail; no real-image accuracy claim is made. Documentation identifies the need for sharper conjunctival captures and independent references.

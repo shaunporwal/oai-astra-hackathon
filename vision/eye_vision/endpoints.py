@@ -33,7 +33,7 @@ Do not infer normality or absence of disease from incomplete coverage. Do not in
 numeric ratios, vessel metrics, bilirubin, hemoglobin, cholesterol or timed light reflex from these stills.
 Do not claim expert-referenced arcus presence: describe visible peripheral opacity or uncertainty only.
 No treatment advice. A still-frame request cannot measure pupillary light reflex.
-The server separately reports numeric measurements as null because calibrated measurement methods are not implemented.
+The server independently attaches local experimental measurements where implemented; never invent numbers to fill missing measurements.
 Target specification:\n''' + json.dumps(targets)
 
 
@@ -60,17 +60,23 @@ def assemble(observations, spec, indices):
     return results
 
 
-def attach_geometry(result, geometry):
-    """Attach a measurement computed from this saved JPEG, never a model estimate."""
-    for target in result.get('endpoint_assessment', {}).get('targets', []):
-        if target['target_id'] != 'pupil_iris_ratio':
-            continue
-        assessment = geometry['ratio_assessment']
-        value = geometry['pupil_to_iris_ratio']
+def attach_measurements(result, geometry):
+    """Attach shared local measurement results computed on this saved JPEG."""
+    local={(m['target_id'],m['name']):m for m in geometry.get('measurements',[])}
+    # Compatibility for callers supplying the original geometry-only result.
+    if not local:
+        assessment=geometry['ratio_assessment'];value=geometry['pupil_to_iris_ratio']
+        local[('pupil_iris_ratio','pupil_to_iris_ratio')]={
+            'value':value,'status':'estimated' if value is not None else 'ungradable',
+            'reason':assessment['reason'],'method':assessment.get('method'),'validated':False}
+    for target in result.get('endpoint_assessment',{}).get('targets',[]):
         for measurement in target['measurements']:
-            if measurement['name'] == 'pupil_to_iris_ratio':
-                measurement.update(value=value, status='estimated' if value is not None else 'ungradable',
-                    reason=assessment['reason'], method=assessment.get('method'),
-                    source='local_geometry_on_saved_jpeg', validated=False)
-    result['saved_geometry'] = geometry
+            data=local.get((target['target_id'],measurement['name']))
+            if data:
+                measurement.update({k:v for k,v in data.items() if k not in ('target_id','name')})
+                measurement['source']='local_geometry_on_saved_jpeg' if target['target_id']=='pupil_iris_ratio' else 'local_analysis_on_saved_jpeg'
+    result['saved_geometry']=geometry
     return result
+
+# Preserve the original Python adapter name for existing callers.
+attach_geometry = attach_measurements

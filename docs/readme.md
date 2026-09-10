@@ -4,6 +4,8 @@ Start with the [iPhone runbook](guides/iphone-runbook.md) for capture and proces
 
 ## Guides
 
+- [Redness capture](guides/redness-capture.md): region selection, candidate vessel masks and limitations.
+
 - [iPhone runbook](guides/iphone-runbook.md): recording, transfer, preparation, and optional API use.
 - [Manual Astra review](guides/manual-review.md): interactive review without an API key.
 
@@ -22,6 +24,8 @@ Start with the [iPhone runbook](guides/iphone-runbook.md) for capture and proces
 The machine-readable target specification is [specs/details.json](../specs/details.json); the unmodified source proposal is [specs/details.csv](../specs/details.csv).
 
 ## Development
+
+- [Measurement contract](development/measurement-contract.md): shared analysis API and module boundaries.
 
 - [Architecture](development/architecture.md): module boundaries and output contracts.
 - [Guided capture plan](development/guided-capture-plan.md): camera control, automatic frame selection, Astra feedback, and proposed spending limits.

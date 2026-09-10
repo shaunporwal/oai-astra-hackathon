@@ -96,3 +96,19 @@ class LiveTests(unittest.TestCase):
         m=response.json()['endpoint_assessment']['targets'][0]['measurements'][0]
         self.assertAlmostEqual(m['value'],.3,delta=.025)
         self.assertEqual(m['source'],'local_geometry_on_saved_jpeg')
+
+    def test_redness_roi_persists_and_invalid_roi_rejected(self):
+        headers={**self.headers,'x-analysis-options':json.dumps({'target':'redness','roi':[.1,.1,.8,.8]})}
+        frame=np.full((200,240,3),210,dtype=np.uint8)
+        cv2.line(frame,(50,60),(180,130),(100,100,190),2)
+        _,encoded=cv2.imencode('.jpg',frame)
+        response=self.client.post('/api/snapshot',content=encoded.tobytes(),headers=headers)
+        self.assertEqual(response.status_code,200)
+        r=response.json();folder=self.root/r['case_id']
+        manifest=json.loads((folder/'manifest.json').read_text())
+        self.assertEqual(manifest['analysis_options']['roi'],[.1,.1,.8,.8])
+        self.assertTrue((folder/'vessel_mask.png').is_file())
+        saved=json.loads((folder/'geometry.json').read_text())
+        self.assertEqual(saved['redness']['measurement'],r['geometry']['redness']['measurement'])
+        headers['x-analysis-options']='{"target":"redness","roi":[0,0,2,2]}'
+        self.assertEqual(self.client.post('/api/frame',content=self.data,headers=headers).status_code,422)

@@ -17,3 +17,11 @@ assert.match(s.update({...metrics(),ratio_assessment:{reason:'Boundary obscured'
 for(let i=0;i<3;i++)assert.equal(s.update({...metrics(),ratio_assessment:{status:'estimated'},pupil_to_iris_ratio:.3},'accepted'+i,300*i).selected,undefined);
 assert.equal(s.update({...metrics(),ratio_assessment:{status:'estimated'},pupil_to_iris_ratio:.3},'accepted3',900).selected,'accepted3');
 console.log('Selector: rejected iris blocks capture; accepted stable geometry permits capture');
+s.reset();
+const redness=(value=0)=>({selection:{eligible:true,reason:'fixture',score:10,motion_signature:Array(256).fill(value)}});
+for(let i=0;i<3;i++)assert.equal(s.update(redness(),'red'+i,300*i).selected,undefined);
+assert.equal(s.update(redness(),'red3',900).selected,'red3');
+s.reset();s.update(redness(),'before',0);
+assert.match(s.update(redness(.1),'moving',300).message,/changing/);
+assert.equal(s.update({selection:{eligible:false,reason:'Mark tissue'}},'invalid',600).selected,undefined);
+console.log('Selector: redness works without pupil geometry and rejects motion/missing region');

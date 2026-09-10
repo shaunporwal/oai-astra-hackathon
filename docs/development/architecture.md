@@ -74,3 +74,7 @@ Both remain `not_configured`. `EyeModel` remains an extension point in the origi
 Mutating/image requests require the page's random session token; accepted hostnames and server binding restrict the service to local development. One frame computation and one model review can run at a time. This is a prototype interface rather than a deployed mobile API.
 
 The new `dark_region_ellipse_v1` estimator thresholds the central image region, rejects border-touching/poorly shaped candidates, and ranks elliptical dark regions by contrast and edge strength. It does not verify eye presence or segment the iris. Candidates and unavailable outputs are shown explicitly.
+
+## Shared clinical-measurement modules
+
+See [measurement contract](measurement-contract.md) for the analysis orchestrator, typed value contract, region persistence, generic endpoint attachment and shared browser rendering. Redness and pupil geometry have independent capture gates.

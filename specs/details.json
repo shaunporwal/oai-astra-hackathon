@@ -106,7 +106,14 @@
         "status": "requires_dedicated_conjunctival_capture_and_validation"
       },
       "validated_on_our_iphone_15_pro_15x_setup": false,
-      "qualified_clinical_trial_endpoint": false
+      "qualified_clinical_trial_endpoint": false,
+      "implementation": {
+        "method": "user_roi_red_linear_features_v1",
+        "roi_source": "user_designated_not_anatomically_verified",
+        "output_status": "estimated_or_ungradable",
+        "measurement_scope": "candidate_vessel_area_fraction_only",
+        "documentation": "docs/guides/redness-capture.md"
+      }
     },
     {
       "id": "palpebral_conjunctival_color",

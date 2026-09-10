@@ -67,3 +67,5 @@ The pupil/iris measurement now supersedes the earlier all-null behavior above: i
 ## Compact dashboard
 
 Desktop layout keeps camera, controls, local metrics, saved-image summary and endpoint summaries in one viewport. Expand each endpoint, capture observations, or Camera & help for details. Expanded content can scroll within its panel. Narrow screens and short windows use a stacked layout with normal scrolling for readability. No information or capture action was removed.
+
+The default capture mode now supports [conjunctival vessels](redness-capture.md) through a user-selected region. The pupil/iris mode remains selectable. Both use the shared [measurement contract](../development/measurement-contract.md).

@@ -19,9 +19,9 @@ from fastapi.staticfiles import StaticFiles
 from starlette.concurrency import run_in_threadpool
 from starlette.middleware.trustedhost import TrustedHostMiddleware
 
-from .geometry import analyze_frame
+from .analysis import analyze_frame, validate_options, save_analysis
 from .config import configure_api_key
-from .endpoints import attach_geometry
+from .endpoints import attach_measurements
 
 STATIC = Path(__file__).parent / "static"
 
@@ -56,6 +56,14 @@ def create_app(output=None):
             raise HTTPException(422, "Expected a decodable frame with dimensions between 64 and 1600 pixels")
         return bytes(data), frame
 
+    def analysis_options(request):
+        raw=request.headers.get('x-analysis-options','{}')
+        try:
+            if len(raw)>512:raise ValueError('Analysis options too long')
+            return validate_options(json.loads(raw))
+        except (ValueError,TypeError):
+            raise HTTPException(422,'Invalid analysis target or normalized ROI') from None
+
     @app.get("/")
     async def index():
         return HTMLResponse((STATIC/"live.html").read_text().replace("__SESSION_TOKEN__", token), headers={"Cache-Control":"no-store"})
@@ -70,8 +78,9 @@ def create_app(output=None):
             raise HTTPException(429, "Frame analysis busy; send the next frame later")
         async with frame_lock:
             _, decoded = await read_frame(request)
+            options=analysis_options(request)
             start=time.monotonic()
-            result=await run_in_threadpool(analyze_frame, decoded)
+            result=await run_in_threadpool(analyze_frame, decoded, options)
             result["processing_ms"]=(time.monotonic()-start)*1000
             return result
 
@@ -81,21 +90,22 @@ def create_app(output=None):
         mode=request.headers.get("x-source-mode", "unknown")
         if mode not in ("live_camera", "recorded_video"):
             raise HTTPException(422, "Specify live_camera or recorded_video source")
+        options=analysis_options(request)
         case="live-"+secrets.token_hex(8)
         folder=output/case
         folder.mkdir(parents=True,exist_ok=False)
         (folder/"frame_00000000.jpg").write_bytes(data)
         digest=hashlib.sha256(data).hexdigest()
-        metrics=await run_in_threadpool(analyze_frame, decoded)
+        metrics=await run_in_threadpool(analyze_frame, decoded, options)
         manifest={"schema_version":"0.2", "source_sha256":digest,
                   "source_name":"browser_snapshot.jpg", "source_type":"single_frame",
-                  "capture_mode":mode, "captured_at_utc":datetime.now(timezone.utc).isoformat(),
+                  "analysis_options":options,"capture_mode":mode, "captured_at_utc":datetime.now(timezone.utc).isoformat(),
                   "timestamp_note":"Server receipt time, not sensor exposure time",
                   "frames":[{"frame_index":0,"timestamp_ms":0,"image_file":"frame_00000000.jpg",
                              "image_sha256":digest,"image_size_wh":metrics['image_size_wh']}],
                   "diagnosis":{"status":"not_configured"}}
         (folder/"manifest.json").write_text(json.dumps(manifest,indent=2)+'\n')
-        (folder/"geometry.json").write_text(json.dumps(metrics,indent=2)+'\n')
+        save_analysis(folder,metrics)
         return {"case_id":case,"mode":mode,"snapshot_url":f"/api/snapshot/{case}","saved_directory":str(folder),"geometry":metrics}
 
     def case_folder(case):
@@ -117,10 +127,11 @@ def create_app(output=None):
         folder=case_folder(case)
         existing=folder/"endpoint-prediction.json"
         # Recompute local geometry on the exact saved image, including for older cached reviews.
-        geometry = await run_in_threadpool(analyze_frame, cv2.imread(str(folder/'frame_00000000.jpg')))
-        (folder/'geometry.json').write_text(json.dumps(geometry,indent=2)+'\n')
+        manifest=json.loads((folder/'manifest.json').read_text())
+        geometry = await run_in_threadpool(analyze_frame, cv2.imread(str(folder/'frame_00000000.jpg')),manifest.get('analysis_options'))
+        save_analysis(folder,geometry)
         if existing.exists():
-            result = attach_geometry(json.loads(existing.read_text()), geometry)
+            result = attach_measurements(json.loads(existing.read_text()), geometry)
             existing.write_text(json.dumps(result,indent=2)+'\n')
             return result
         if not has_astra():
@@ -133,7 +144,7 @@ def create_app(output=None):
                 result=await run_in_threadpool(analyze,folder/"manifest.json",case,endpoint_review=True)
             except Exception:
                 raise HTTPException(502,"Astra review failed; no diagnosis or substitute result was generated") from None
-            result = attach_geometry(result, geometry)
+            result = attach_measurements(result, geometry)
             existing.write_text(json.dumps(result,indent=2)+'\n')
             return result
 
