@@ -1,9 +1,15 @@
-# Guided eye capture research pipeline
+# iPhone macro capture and shared research endpoint assessment
 
-Adds a local browser dashboard for iPhone Continuity Camera or recorded-video input, experimental pupil and iris ellipse geometry with a dimensionless ratio, and opt-in automatic selection of an exact JPEG from a stable window. Saved frames can be sent manually to Astra for capture-quality review using a Git-ignored root `.env` credential. The browser reports available camera controls without changing hardware settings.
+Adds a browser dashboard and independent native iPhone client for saving eye-video frames and assessing them through one Python backend. The native client pins the rear wide camera at 1× for an external macro attachment, supports focus/exposure adjustment and region selection, and offers a single **Analyze + Ask Astra** action. Local-only processing remains available without API use. Saved-frame previews, session recovery, and compact expandable results support the browser flow.
 
-Organizes documentation and lowercase target specifications, with literature-grounded endpoint limitations and activity tracking. No Swift application changes. Diagnosis, validated anatomical segmentation, Astra camera action execution and automatic API budget enforcement remain unimplemented.
+Python owns candidate vessel coverage, pupil/iris geometry and structured review of six literature-grounded research targets. Missing or unsupported numerical values remain unavailable. Astra supplies observations rather than invented measurements; the application does not establish diagnoses. Credentials stay on the Mac, mobile access uses a rotating pairing token, and successful saved-case reviews are cached. API requests are explicit, with no automatic retry loop. LAN HTTP is development transport.
 
-Validation: 28 Python tests, Node selection tests, JavaScript syntax checks and a simulated-camera browser smoke check passed. Eight prepared recording frames were spot-checked; candidate detection still admits imperfect views. One previously documented real Astra review succeeded; this selection milestone made no additional paid requests. Physical iPhone control and clinical performance remain unverified.
+The backup and prepared partner-UI bridge share one Swift API client. Partner screens are not yet integrated. Specifications, literature, evaluation plans and setup guides are organized under lowercase paths.
 
-Adds orthogonal, user-ROI candidate vessel segmentation through a shared measurement contract and analysis orchestrator. Live/saved overlays and capture-window retention are shared. 34 Python tests, selector checks and a simulated-camera region-selection/save smoke test passed; real-image clinical accuracy remains unvalidated.
+## Validation and remaining limits
+
+- Full unsigned native iPhone build and Swift contract checks passed, including decoding an actual six-target Astra response.
+- Existing Python suite: 35 tests passed at the preceding backend milestone. Browser fake-camera checks covered manual/automatic save, stale sessions, annotation/server failures and compact layout.
+- Latest running-backend smoke check used one frame from the user's macro recording and one paid Astra request: snapshot/review succeeded, but all numerical endpoints were unavailable for that frame.
+- Connected iPhone and Developer Mode confirmed. Signing account/team setup is still required; native installation, attachment alignment and phone-to-Mac capture flow remain unverified.
+- Segmentation and endpoint measurements remain experimental. Clinical evaluation needs suitable targeted captures and independent reference labels.

@@ -10,7 +10,7 @@ Independent SwiftUI/AVFoundation client for iPhone 15 Pro, with iOS 17+ deployme
 - Retain captured JPEGs in the app Documents directory, with export through the share sheet.
 - Mark a normalized conjunctival rectangle on the captured image, or choose pupil/iris mode.
 - Send the exact JPEG/options to the shared Python snapshot endpoint. Display native overlays and local measurements.
-- Explicit **Ask Astra** action for the existing six-target assessment. No OpenAI credential is stored on the phone. No automatic API requests or retry loops.
+- Explicit **Analyze + Ask Astra** action for local measurement followed by the existing six-target assessment. An optional local-only dropdown uses no API credits. No OpenAI credential is stored on the phone. No automatic API requests or retry loops.
 
 Swift only handles camera, region selection, transport and presentation. The transport/models are shared from `ios/shared/analysis_client.swift`, referenced by the Xcode target. Measurement algorithms remain in Python. The browser's live automatic-selection controller is not ported into this backup client; capture is manual. Full offline analysis and on-phone Astra inference are not implemented.
 
@@ -25,7 +25,7 @@ DEVELOPER_DIR=/Applications/Xcode.app/Contents/Developer xcodebuild \
   CODE_SIGNING_ALLOWED=NO build
 ```
 
-The unsigned build passed with Xcode 26.6 / iOS SDK 26.5. Using `-target` works on this Mac; the scheme destination build currently reports a missing iOS platform component. An unsigned build cannot be installed on the phone. The user subsequently connected an iPhone 15 Pro and USB pairing was confirmed. Developer Mode was disabled at detection and this Mac had no signing identity, so physical camera behavior and installation remain untested.
+The unsigned build passed with Xcode 26.6 / iOS SDK 26.5. Using `-target` works on this Mac; the scheme destination build currently reports a missing iOS platform component. An unsigned build cannot be installed on the phone. The connected iPhone 15 Pro is paired and Developer Mode is enabled. This Mac still has no signing identity, so physical camera behavior and installation remain untested.
 
 ## Install on your phone
 
@@ -53,7 +53,7 @@ pbcopy < vision/runs/mobile/mobile-pairing.json
 
 Use Universal Clipboard or another private transfer to paste the full JSON into **Pair with analysis server** on the phone, then tap **Use pairing configuration**. Pairing lives in app memory and must be re-entered after app termination. The server regenerates the token on every restart. Pairing files and captures are Git-ignored; the file is mode 0600. The remote root page does not reveal a session token, and analysis endpoints require the pairing token. Redirects are refused by the native client.
 
-After capture, select a region and tap **Analyze on Mac**. This makes no Astra request. Inspect the overlay and measurement status before using **Ask Astra**. Results apply to the captured image; changing the target or region invalidates the old local result. The current model remains experimental and does not establish a diagnosis.
+After capture, select a region and tap **Analyze + Ask Astra** for local measurement followed by endpoint review. Use **Local analysis only → Measure on Mac** to inspect the overlay without an Astra request. Results apply to the captured image; changing the target or region invalidates the old local result. Failed reviews retain the saved case for explicit retry, and completed assessments disable the main action. The current model remains experimental and does not establish a diagnosis. See the [minimal demo guide](../../docs/guides/minimal-iphone-demo.md).
 
 ## Verification
 

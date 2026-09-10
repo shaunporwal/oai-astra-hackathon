@@ -12,6 +12,7 @@ struct CaptureView: View {
     @State private var snapshot: Snapshot?
     @State private var review: Review?
     @State private var busy=false
+    @State private var measurementsExpanded=false
     @State private var message="Capture uses the rear wide camera. Place the macro attachment over that lens."
     @State private var exposure=0.0
 
@@ -55,15 +56,20 @@ struct CaptureView: View {
                         }
                         if let pairing { Text(pairing.server_url).font(.caption) }
                     }
-                    HStack {
-                        Button("Analyze on Mac") { Task { await analyze() } }.buttonStyle(.borderedProminent)
+                    Button(review == nil ? "Analyze + Ask Astra" : "Assessment complete") {
+                        Task { await analyze(includeAstra:true) }
+                    }.buttonStyle(.borderedProminent)
+                        .disabled(frozen == nil || pairing == nil || (target == "redness" && roi == nil) || review != nil)
+                    Text(pairing == nil ? "Pair with the Mac above to enable analysis." : frozen == nil ? "Capture a frame to begin." : target == "redness" && roi == nil ? "Drag a rectangle over exposed conjunctiva to enable analysis." : "Sends this saved frame to your Mac and OpenAI. Uses API credits only when you tap.")
+                        .font(.caption).foregroundStyle(.secondary)
+                    DisclosureGroup("Local analysis only · no API credits") {
+                        Button("Measure on Mac") { Task { await analyze(includeAstra:false) } }.buttonStyle(.bordered)
                             .disabled(frozen == nil || pairing == nil || (target == "redness" && roi == nil))
-                        Button("Ask Astra") { Task { await askAstra() } }.buttonStyle(.bordered).disabled(snapshot == nil)
                     }
                     if busy { ProgressView("Working…") }
                     Text(message).font(.callout).foregroundStyle(.secondary).accessibilityIdentifier("status")
                     if let snapshot {
-                        DisclosureGroup("Local measurements",isExpanded:.constant(true)) {
+                        DisclosureGroup("Local measurements",isExpanded:$measurementsExpanded) {
                             ForEach(snapshot.geometry.measurements.filter { $0.target_id == (target == "redness" ? "conjunctival_hyperemia" : "pupil_iris_ratio") }) { measurement in
                                 VStack(alignment:.leading) {
                                     Text(measurement.name.replacingOccurrences(of:"_",with:" ")).font(.headline)
@@ -83,7 +89,7 @@ struct CaptureView: View {
                             }
                         }
                     }
-                    Text("Research prototype. Candidate measurements are unvalidated and do not establish a diagnosis. Analyze on Mac sends the saved frame to your Mac; Ask Astra uploads it to OpenAI and uses API credits.").font(.caption).foregroundStyle(.secondary)
+                    Text("Research prototype. Candidate measurements are unvalidated and do not establish a diagnosis. Missing measurements remain unavailable. Astra reviews the saved frame, not the continuous video.").font(.caption).foregroundStyle(.secondary)
                 }.padding().disabled(busy)
             }.navigationTitle("Eye Lab · Backup")
         }
@@ -100,18 +106,25 @@ struct CaptureView: View {
             message="Frame retained on this phone. Select a region and analyze when paired."
         } catch { localFile=nil;message="Frame is in memory, but local file saving failed." }
     }
-    @MainActor private func analyze() async {
-        guard let pairing,let frozen else { return }
+    @MainActor private func analyze(includeAstra: Bool) async {
+        guard !busy,let pairing,let frozen else { return }
         busy=true;defer { busy=false }
+        let client=AnalysisClient(pairing:pairing)
         do {
-            snapshot=try await AnalysisClient(pairing:pairing).snapshot(jpeg:frozen,options:AnalysisOptions(target:target,roi:roi))
-            review=nil;message="Local analysis complete. No Astra call was made."
-        } catch { message="Analysis failed: \(error.localizedDescription)" }
-    }
-    @MainActor private func askAstra() async {
-        guard let pairing,let snapshot else { return }
-        busy=true;defer { busy=false }
-        do { review=try await AnalysisClient(pairing:pairing).review(caseID:snapshot.case_id);message="Astra assessment applies to this saved frame." }
-        catch { message="Astra assessment failed: \(error.localizedDescription)" }
+            if snapshot == nil {
+                message="Measuring the saved frame on your Mac…"
+                snapshot=try await client.snapshot(jpeg:frozen,options:AnalysisOptions(target:target,roi:roi))
+            }
+            if includeAstra,let snapshot {
+                message="Astra is reviewing the saved frame…"
+                review=try await client.review(caseID:snapshot.case_id)
+                message="Assessment complete. Expand an endpoint below for findings and limitations."
+            } else {
+                measurementsExpanded=true
+                message="Local analysis complete. No Astra call was made."
+            }
+        } catch {
+            message=snapshot == nil ? "Analysis failed: \(error.localizedDescription)" : "Local measurements retained. Astra review failed: \(error.localizedDescription). No automatic retry was made."
+        }
     }
 }

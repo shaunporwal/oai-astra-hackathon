@@ -15,5 +15,12 @@ struct ContractCheck {
         let roundTrip=try JSONDecoder().decode(AnalysisOptions.self,from:JSONEncoder().encode(options))
         precondition(roundTrip.roi == options.roi)
         print("Native response decoding and normalized-region encoding passed")
+        if CommandLine.arguments.count > 2 {
+            struct SmokeResult: Decodable { let snapshot: Snapshot; let review: Review }
+            let actual=try JSONDecoder().decode(SmokeResult.self,from:Data(contentsOf:URL(fileURLWithPath:CommandLine.arguments[2])))
+            precondition(actual.review.endpoint_assessment.targets.count == 6)
+            precondition(Set(actual.review.endpoint_assessment.targets.map(\.target_id)).count == 6)
+            print("Live snapshot and six-target Astra response decoding passed")
+        }
     }
 }
