@@ -25,7 +25,7 @@ DEVELOPER_DIR=/Applications/Xcode.app/Contents/Developer xcodebuild \
   CODE_SIGNING_ALLOWED=NO build
 ```
 
-The unsigned build passed with Xcode 26.6 / iOS SDK 26.5. Using `-target` works on this Mac; the scheme destination build currently reports a missing iOS platform component. An unsigned build cannot be installed on the phone. The connected iPhone 15 Pro is paired and Developer Mode is enabled. This Mac still has no signing identity, so physical camera behavior and installation remain untested.
+The unsigned build passed with Xcode 26.6 / iOS SDK 26.5. Both the direct target build and the device-destination scheme build now work after installation of the Xcode components. An unsigned build cannot be installed on the phone. The connected iPhone 15 Pro is paired and Developer Mode is enabled. A subsequent signed scheme build and USB installation succeeded with the user’s Personal Team. iOS blocked the first launch pending developer trust; camera behavior remains untested.
 
 ## Install on your phone
 
@@ -57,6 +57,10 @@ After capture, select a region and tap **Analyze + Ask Astra** for local measure
 
 ## Verification
 
-Swift SDK typecheck and unsigned device build passed. A native Foundation contract executable decoded a real Python-generated synthetic snapshot response and round-tripped normalized ROI options. The Python suite contains 35 tests, including remote token non-disclosure, host restrictions and authenticated phone-style JPEG analysis. No simulator runtime was installed. The physical iPhone was detected but the app was not installed; UI gestures, focus behavior, exposure changes and local-network permission flows require the device smoke check above.
+Swift SDK typecheck and unsigned device build passed. A native Foundation contract executable decoded a real Python-generated synthetic snapshot response and round-tripped normalized ROI options. The Python suite contains 35 tests, including remote token non-disclosure, host restrictions and authenticated phone-style JPEG analysis. The user subsequently installed the simulator/platform components. The physical iPhone app was signed and installed. Signature verification and device inclusion in the provisioning profile passed. First launch requires developer trust in iPhone Settings → General → VPN & Device Management; UI gestures, focus behavior, exposure changes and local-network permission flows still require the device smoke check above.
 
 Apple references: [AVCam camera app](https://developer.apple.com/documentation/avfoundation/avcam-building-a-camera-app), [capture-device configuration](https://developer.apple.com/documentation/avfoundation/avcapturedevice/lockforconfiguration()), [local network privacy](https://developer.apple.com/documentation/technotes/tn3179-understanding-local-network-privacy), [local networking ATS key](https://developer.apple.com/documentation/bundleresources/information-property-list/nsapptransportsecurity/nsallowslocalnetworking).
+
+### USB pairing during development
+
+A paired development Mac can copy the ignored `mobile-pairing.json` file to `tmp/mobile-pairing.json` inside this app’s data container using `devicectl device copy to`. At startup the app decodes this one-use file and deletes it, retaining pairing in memory. This avoids clipboard setup on the initial install; it does not embed credentials in the app bundle or persist the OpenAI key. After termination, re-provision the file or use manual pairing.

@@ -4,7 +4,9 @@ Use the independent native client in `ios/backup` with the existing Python backe
 
 ## Current installation step
 
-The connected iPhone 15 Pro has Developer Mode enabled. The app builds for iPhone, but this Mac has no valid signing identity yet. In Xcode, open `ios/backup/eye-backup.xcodeproj`, select the **eye-backup target → Signing & Capabilities → Team**. Add an Apple account under **Xcode → Settings → Accounts** if needed. Select the connected phone and run. Signing is required before the app can be installed; an unsigned build is not a working phone installation.
+The app has been signed with the user's Personal Team and installed on the connected iPhone 15 Pro. Developer Mode is enabled. The first launch was blocked by iOS pending developer trust; signature verification passed and the provisioning profile includes the phone. On the phone, open **Settings → General → VPN & Device Management**, select the developer account, and trust it (follow any restart prompt). Then open **Eye Lab Backup** and allow Camera/Local Network access.
+
+For future builds, use the connected iPhone as the Xcode run destination and select your Team under Signing & Capabilities. The signed scheme build now works after the Xcode components were installed. Personal signing details are supplied locally, not committed.
 
 ## Start and pair
 
@@ -19,6 +21,8 @@ Keep the phone and Mac on the same trusted Wi-Fi and allow Camera/Local Network 
 ```sh
 pbcopy < vision/runs/mobile/mobile-pairing.json
 ```
+
+For this installation, pairing was transferred over USB into a one-use temporary file. The app imports and deletes it at startup; it remains in memory only. Manual pairing is still available:
 
 Paste into **Pair with analysis server** on the phone using Universal Clipboard, then tap **Use pairing configuration**. Re-pair after restarting the app or server. The API key stays in the Mac environment; it is not embedded in the iPhone app.
 
@@ -36,4 +40,4 @@ The optional **Local analysis only** dropdown runs measurements without an Astra
 
 Native macro-image acquisition, reproducible frame-specific processing, candidate vessel coverage or pupil/iris ratio when measurable, and Astra observations for six specified research endpoints. Numerical measurements come from the local image algorithms; Astra does not invent missing values. Some endpoints need different views, calibration or temporal protocols and will remain unavailable. This is a capture-and-assessment prototype, not a validated diagnostic application. See [clinical value](../research/clinical-value.md) for the clinical workflow and evidence plan.
 
-Physical installation, camera alignment through this attachment, and phone-to-Mac networking still require an on-device smoke check after signing.
+Installation succeeded. First launch after trust, camera alignment through this attachment, and phone-to-Mac networking still require an on-device smoke check.

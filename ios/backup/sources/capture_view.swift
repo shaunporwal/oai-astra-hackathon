@@ -93,8 +93,20 @@ struct CaptureView: View {
                 }.padding().disabled(busy)
             }.navigationTitle("Eye Lab · Backup")
         }
-        .task { camera.start() }
+        .task { loadUSBPairing();camera.start() }
         .onChange(of:scenePhase) { _,phase in if phase != .active { camera.stop() } else if frozen == nil { camera.start() } }
+    }
+    private func loadUSBPairing() {
+        // Development installation can provision a one-use file over the paired USB connection.
+        let url=FileManager.default.temporaryDirectory.appendingPathComponent("mobile-pairing.json")
+        guard FileManager.default.fileExists(atPath:url.path) else { return }
+        defer { try? FileManager.default.removeItem(at:url) }
+        do {
+            pairing=try JSONDecoder().decode(Pairing.self,from:Data(contentsOf:url))
+            message="Mac pairing loaded over USB. Capture a frame to begin."
+        } catch {
+            message="USB pairing could not be loaded. Paste the pairing configuration below."
+        }
     }
     private func capture() {
         guard let data=camera.latestJPEG else { return }

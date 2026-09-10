@@ -11,5 +11,5 @@ The backup and prepared partner-UI bridge share one Swift API client. Partner sc
 - Full unsigned native iPhone build and Swift contract checks passed, including decoding an actual six-target Astra response.
 - Existing Python suite: 35 tests passed at the preceding backend milestone. Browser fake-camera checks covered manual/automatic save, stale sessions, annotation/server failures and compact layout.
 - Latest running-backend smoke check used one frame from the user's macro recording and one paid Astra request: snapshot/review succeeded, but all numerical endpoints were unavailable for that frame.
-- Connected iPhone and Developer Mode confirmed. Signing account/team setup is still required; native installation, attachment alignment and phone-to-Mac capture flow remain unverified.
+- Connected iPhone and Developer Mode confirmed. Signed build and native installation succeeded. First launch is pending developer trust on the phone; attachment alignment and phone-to-Mac capture flow remain unverified. A one-use USB pairing import avoids initial clipboard setup.
 - Segmentation and endpoint measurements remain experimental. Clinical evaluation needs suitable targeted captures and independent reference labels.
