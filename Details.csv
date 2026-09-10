@@ -1,0 +1,7 @@
+Biomarker Target,Computer Vision Endpoint,Clinical & Trial Indication
+Sclera Color (Yellowness / Icterus),b∗ chromaticity channel (in CIE L∗a∗b∗ color space) or mean yellow-blue ratio,"Liver Dysfunction / Jaundice: Tracks circulating serum bilirubin non-invasively (hepatitis, cirrhosis, bile obstruction)."
+Sclera / Conjunctiva Redness (Hyperemia),Vascular Tortuosity & Red Fraction: % of pixel coverage by segmented vessel branches,Dry Eye & Allergic Conjunctivitis: Core primary endpoint for topical anti-inflammatory drug trials.
+Sclera Pallor (Whiteness),a∗ channel drop (red-green axis) & vascular attenuation,Anemia Screening: Loss of vascular perfusion in the anterior microcirculation.
+Pupil Dilation & Size (Static),"Pupil-to-Iris Ratio (PIR): Dpupil​/Diris​ (using Horizontal Visible Iris Diameter, ~11.8 mm, as calibration)","Autonomic Tone & Drug Toxicity: Quantifies miosis (opioids, cholinergics) vs. mydriasis (anticholinergics, sympathomimetics, trauma)."
+Pupillary Light Reflex (Dynamic),Constriction Velocity (mm/s) & Percent Constriction: Dmax​Dmax​−Dmin​​×100,Traumatic Brain Injury (mTBI) & Concussion: Neuro-ophthalmic screening for cranial nerve III dysfunction and brainstem injury.
+Corneal / Iris Boundary (Arcus Senilis),Peripheral Ring Opacity Index: Pixel luminance delta along the outer limbal rim,Dyslipidemia & Cardiovascular Risk: Lipid ring deposition around the peripheral cornea.
