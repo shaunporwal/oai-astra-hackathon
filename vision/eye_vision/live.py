@@ -21,6 +21,7 @@ from starlette.middleware.trustedhost import TrustedHostMiddleware
 
 from .geometry import analyze_frame
 from .config import configure_api_key
+from .endpoints import attach_geometry
 
 STATIC = Path(__file__).parent / "static"
 
@@ -95,7 +96,7 @@ def create_app(output=None):
                   "diagnosis":{"status":"not_configured"}}
         (folder/"manifest.json").write_text(json.dumps(manifest,indent=2)+'\n')
         (folder/"geometry.json").write_text(json.dumps(metrics,indent=2)+'\n')
-        return {"case_id":case,"mode":mode,"snapshot_url":f"/api/snapshot/{case}","saved_directory":str(folder)}
+        return {"case_id":case,"mode":mode,"snapshot_url":f"/api/snapshot/{case}","saved_directory":str(folder),"geometry":metrics}
 
     def case_folder(case):
         if not re.fullmatch(r"live-[0-9a-f]{16}",case):
@@ -115,8 +116,13 @@ def create_app(output=None):
         authorize(request)
         folder=case_folder(case)
         existing=folder/"endpoint-prediction.json"
+        # Recompute local geometry on the exact saved image, including for older cached reviews.
+        geometry = await run_in_threadpool(analyze_frame, cv2.imread(str(folder/'frame_00000000.jpg')))
+        (folder/'geometry.json').write_text(json.dumps(geometry,indent=2)+'\n')
         if existing.exists():
-            return json.loads(existing.read_text())
+            result = attach_geometry(json.loads(existing.read_text()), geometry)
+            existing.write_text(json.dumps(result,indent=2)+'\n')
+            return result
         if not has_astra():
             raise HTTPException(503,"Configure OPENAI_API_KEY and install the astra extra, then restart eye-live")
         if review_lock.locked():
@@ -127,6 +133,7 @@ def create_app(output=None):
                 result=await run_in_threadpool(analyze,folder/"manifest.json",case,endpoint_review=True)
             except Exception:
                 raise HTTPException(502,"Astra review failed; no diagnosis or substitute result was generated") from None
+            result = attach_geometry(result, geometry)
             existing.write_text(json.dumps(result,indent=2)+'\n')
             return result
 

@@ -6,6 +6,7 @@ import cv2
 import numpy as np
 
 from .prepare import quality
+from .iris import fit_iris
 
 
 def analyze_frame(frame):
@@ -15,6 +16,7 @@ def analyze_frame(frame):
     result = {"schema_version": "0.3", "image_size_wh": [w, h], "quality": quality(frame),
               "method": "dark_region_ellipse_v1", "pupil": None,
               "iris": None, "pupil_to_iris_ratio": None,
+              "ratio_assessment": {"status": "rejected", "reason": "No pupil candidate"},
               "diagnosis": {"status": "not_configured"},
               "status": "no_reliable_candidate"}
     if min(h, w) < 64:
@@ -28,6 +30,8 @@ def analyze_frame(frame):
     best = None
     otsu, _ = cv2.threshold(region, 0, 255, cv2.THRESH_BINARY + cv2.THRESH_OTSU)
     thresholds = sorted({float(np.percentile(region, p)) for p in (2, 5, 10, 15, 20)} | {otsu})
+    # Include intermediate levels so JPEG rounding does not force a fit inside the dark core.
+    thresholds = sorted(set(thresholds) | {(a+b)/2 for a,b in zip(thresholds,thresholds[1:])})
     for threshold in thresholds:
         mask = (region <= threshold).astype(np.uint8)*255
         mask = cv2.morphologyEx(mask, cv2.MORPH_OPEN, np.ones((3, 3), np.uint8))
@@ -73,4 +77,8 @@ def analyze_frame(frame):
                               "local_contrast":contrast})
     if best is not None:
         result.update(pupil=best[1],status="candidate_found")
+        iris, diagnostics = fit_iris(frame, best[1])
+        result.update(iris=iris, ratio_assessment=diagnostics)
+        if iris is not None:
+            result['pupil_to_iris_ratio'] = best[1]['diameter_px']/iris['diameter_px']
     return result

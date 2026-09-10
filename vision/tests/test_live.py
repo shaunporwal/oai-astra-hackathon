@@ -78,3 +78,21 @@ class LiveTests(unittest.TestCase):
 
     def test_remote_hosts_rejected(self):
         self.assertEqual(self.client.get('/',headers={'host':'evil.example'}).status_code,400)
+
+    def test_cached_review_gets_saved_geometry_without_api(self):
+        image=np.full((400,500,3),210,dtype=np.uint8)
+        cv2.circle(image,(250,200),100,(80,80,80),-1)
+        cv2.circle(image,(250,200),30,(10,10,10),-1)
+        _,encoded=cv2.imencode('.jpg',image)
+        snapshot=self.client.post('/api/snapshot',content=encoded.tobytes(),headers=self.headers).json()
+        self.assertIsNotNone(snapshot['geometry']['pupil_to_iris_ratio'])
+        case=snapshot['case_id']
+        cached={'endpoint_assessment':{'targets':[{'target_id':'pupil_iris_ratio',
+            'measurements':[{'name':'pupil_to_iris_ratio','value':None}]}]}}
+        (self.root/case/'endpoint-prediction.json').write_text(json.dumps(cached))
+        with patch('eye_vision.astra.analyze',side_effect=AssertionError('Must not call API')):
+            response=self.client.post(f'/api/review/{case}',headers=self.headers)
+        self.assertEqual(response.status_code,200)
+        m=response.json()['endpoint_assessment']['targets'][0]['measurements'][0]
+        self.assertAlmostEqual(m['value'],.3,delta=.025)
+        self.assertEqual(m['source'],'local_geometry_on_saved_jpeg')

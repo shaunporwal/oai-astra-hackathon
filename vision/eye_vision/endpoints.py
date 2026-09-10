@@ -58,3 +58,19 @@ def assemble(observations, spec, indices):
                 for m in target['measurements']],
             'literature_ids': target['literature_ids'], 'validated_on_this_setup': False})
     return results
+
+
+def attach_geometry(result, geometry):
+    """Attach a measurement computed from this saved JPEG, never a model estimate."""
+    for target in result.get('endpoint_assessment', {}).get('targets', []):
+        if target['target_id'] != 'pupil_iris_ratio':
+            continue
+        assessment = geometry['ratio_assessment']
+        value = geometry['pupil_to_iris_ratio']
+        for measurement in target['measurements']:
+            if measurement['name'] == 'pupil_to_iris_ratio':
+                measurement.update(value=value, status='estimated' if value is not None else 'ungradable',
+                    reason=assessment['reason'], method=assessment.get('method'),
+                    source='local_geometry_on_saved_jpeg', validated=False)
+    result['saved_geometry'] = geometry
+    return result

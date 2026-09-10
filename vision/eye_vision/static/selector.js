@@ -6,6 +6,7 @@ class FrameSelector {
   update(metrics, frame, now){
     const p=metrics.pupil, q=metrics.quality;
     if(!p){this.reset();return {message:'Center the eye; no pupil candidate found.'};}
+    if(metrics.ratio_assessment && metrics.pupil_to_iris_ratio==null){this.reset();return {message:metrics.ratio_assessment.reason+'; show more of the outer iris boundary.'};}
     const [w,h]=metrics.image_size_wh;
     const position=[p.center_xy[0]/w,p.center_xy[1]/h,p.diameter_px/Math.min(w,h)];
     if(Math.abs(position[0]-.5)>.25||Math.abs(position[1]-.5)>.25){this.reset();return {message:'Move the eye toward the center.'};}

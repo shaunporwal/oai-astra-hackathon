@@ -7,6 +7,8 @@ Start with the [iPhone runbook](guides/iphone-runbook.md) for capture and proces
 - [iPhone runbook](guides/iphone-runbook.md): recording, transfer, preparation, and optional API use.
 - [Manual Astra review](guides/manual-review.md): interactive review without an API key.
 
+- [Pupil ratio](guides/pupil-ratio.md): experimental measurement, overlays, recapture guidance and observed limitations.
+
 ## Research
 
 - [Literature review](research/literature-review.md): paper links, results, limitations, and slide wording.

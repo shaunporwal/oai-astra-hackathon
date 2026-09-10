@@ -179,10 +179,16 @@
       ],
       "current_clip_assessment": {
         "basis": "project engineering judgment from manual review, not a published result",
-        "status": "candidate_frames_available_not_yet_measured"
+        "status": "experimental_geometry_estimates_available_with_low_capture_coverage_and_unvalidated_accuracy"
       },
       "validated_on_our_iphone_15_pro_15x_setup": false,
-      "qualified_clinical_trial_endpoint": false
+      "qualified_clinical_trial_endpoint": false,
+      "implementation": {
+        "method": "radial_limbus_ellipse_v1",
+        "diameter_convention": "sqrt(major_axis_px * minor_axis_px)",
+        "output_status": "estimated_or_ungradable",
+        "documentation": "docs/guides/pupil-ratio.md"
+      }
     },
     {
       "id": "pupillary_light_reflex",

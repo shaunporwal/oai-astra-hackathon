@@ -4,7 +4,7 @@
 
 Open the dashboard on the Mac and select the iPhone's Continuity Camera. The browser previews the stream and sends resized JPEG frames to local Python analysis. It displays a dark-region pupil candidate, pixel diameter, raw sharpness, bright-pixel fraction, and processing time. Save a frame to retain its image and geometry; optionally send that saved image to Astra for capture-quality review.
 
-The current dashboard explicitly reports diagnosis as unconfigured. Neither the pupil estimator nor Astra's capture-quality result establishes a disease diagnosis. The current estimator does not fit the iris, so pupil-to-iris ratio remains unavailable.
+The current dashboard explicitly reports diagnosis as unconfigured. Neither the pupil estimator nor Astra's capture-quality result establishes a disease diagnosis. Experimental iris fitting now supplies a pupil-to-iris ratio when geometric checks pass; see the [pupil ratio guide](pupil-ratio.md).
 
 ## Launch
 
@@ -61,3 +61,5 @@ Structured Astra capture actions and persistent spending limits remain the next 
 The dashboard's Astra action now requests capture quality and all six `specs/details.json` targets in one request. Each target returns a descriptive observation, evidence indices, limitations and observed/ungradable/not_captured status. Observed means appearance can be described, not that a clinical endpoint was measured. The server attaches every specified measurement with null value and an explicit not_measured/not_calibrated status; numerical segmentation, calibration and timed-response methods are not yet connected.
 
 Results are saved as `endpoint-prediction.json`, separately from older quality-only `prediction.json` files. Reopening a prior case and requesting the new assessment incurs a new API request; completed endpoint results are cached. The CLI remains quality-only. The target-specification hash and expanded prompt hash are recorded for reproducibility. The server rejects missing/duplicate targets, unknown evidence indices and claims that selected stills establish a light reflex. There are no additional automated API calls.
+
+The pupil/iris measurement now supersedes the earlier all-null behavior above: its value comes from local saved-JPEG geometry when accepted, with status estimated and validated=false. The other measurements remain null. See [current geometry status](pupil-ratio.md).
