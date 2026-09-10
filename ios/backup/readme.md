@@ -1,4 +1,4 @@
-# Eye Lab backup iPhone app
+# OptoLab backup iPhone app
 
 SwiftUI/AVFoundation client with visual components adapted from the partner OptLab branch. Independent capture/backend integration for iPhone 15 Pro, with iOS 17+ deployment target. It does not edit or depend on the partner's Swift application. Open [eye-backup.xcodeproj](eye-backup.xcodeproj) in Xcode.
 

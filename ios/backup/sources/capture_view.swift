@@ -139,7 +139,7 @@ struct CaptureView: View {
             Image(systemName:"eye").font(.title2).foregroundStyle(Theme.Colors.info)
                 .frame(width:44,height:44).background(.white.opacity(0.6),in:Circle())
             VStack(alignment:.leading,spacing:2) {
-                Text("Eye Lab").font(.system(.title2,design:.rounded,weight:.bold))
+                Text("OptoLab").font(.system(.title2,design:.rounded,weight:.bold))
                 Text(frozen == nil ? "MACRO CAPTURE" : "SAVED FRAME").font(.system(size:10,weight:.semibold)).tracking(1.5)
                     .foregroundStyle(Theme.Colors.inkSecondary)
             }

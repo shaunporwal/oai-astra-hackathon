@@ -290,3 +290,7 @@ Validation: signed device and simulator builds passed; inspected the populated s
 Identified restrictive capture-only system wording, descriptive-only endpoint instructions and the deterministic takeaway as causes of generic reports. Added a structured image assessment with a model-written headline and up to five located/evidenced claims, provisional interpretations, alternatives, supporting and missing evidence, and verification steps. Native review displays this above existing endpoint details. Old cached reviews remain readable with an explicit paid detailed-analysis action; no automatic regeneration. See `docs/development/testable-image-reports.md`.
 
 43 offline tests and signed/device and simulator builds passed. One paid live smoke test completed in 41.96 seconds with three structured claims (3,835 tokens); no retries. Installed/launched on the iPhone and checked the real response in the simulator. Clinical accuracy has not been validated.
+
+## 2026-09-10 — OptoLab app name
+
+Renamed the native app header and iPhone display name to OptoLab, and updated the native readme title. Bundle identity is preserved so existing saved captures remain associated with the same app. Signed build, device installation and launch passed.
