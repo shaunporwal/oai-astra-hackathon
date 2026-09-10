@@ -174,3 +174,11 @@ Display the raw captured JPEG immediately below the capture controls. Report cap
 Added an isolated Playwright regression script using a simulated camera and temporary server: actual manual button, stale-token recovery, injected overlay failure, injected server error, automatic capture and thumbnail placement all passed. Desktop document stayed within 1280×720. No API requests were made.
 
 The connected iPhone now reports Developer Mode enabled and device services available. Signing identity/team setup remains outstanding; no native app installation has been claimed.
+
+## 2026-09-10 — Inspect partner OptLab branch and prepare shared integration
+
+Fetched `origin/feat/optlab-guided-eye-imaging` at f98f3b7 and inspected its native UI, capture, session storage, simulation and endpoint paths in an isolated detached worktree. Found useful voice/motion guidance, high-resolution still capture and session/review UX. Identified conflicts in assumed iris millimeter scale, color/ring endpoint semantics and default ultra-wide/2× optics versus the external attachment. Recommended adopting the partner UI while retaining one authoritative backend endpoint layer.
+
+Moved the backup's API client to `ios/shared`, updated the backup project reference, and added an OptLab bridge against its existing EyeCapture/ImageStore model. The bridge requires explicit physical-versus-simulated provenance and retains capture ID/eye association. It is prepared integration code; no partner screen is yet wired to it. Combined partner/shared/bridge Swift typecheck passed after resolving an EndpointMeasurement DTO name collision; partner Sendable warnings remain. The original partner full build failed at asset compilation due to the missing simulator runtime. No paid requests or partner-branch changes were made. Further screen hooks and camera/measurement corrections are documented in the integration review.
+
+Backup verification after shared-client extraction: unsigned iPhone target build succeeded and the native response-contract/ROI roundtrip check passed. The isolated partner inspection worktree was then removed; build logs/artifacts remain ignored.

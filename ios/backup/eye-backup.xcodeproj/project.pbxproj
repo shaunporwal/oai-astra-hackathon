@@ -1,6 +1,6 @@
 // !$*UTF8*$!
 { archiveVersion = 1; classes = {}; objectVersion = 56; objects = {
-C0EDD6A94431525E5BEAB823 = { isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "sources/analysis_client.swift"; sourceTree = "<group>"; };
+C0EDD6A94431525E5BEAB823 = { isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "../shared/analysis_client.swift"; sourceTree = "<group>"; };
 5D4C4FBCA2287012BD802BAA = { isa = PBXBuildFile; fileRef = C0EDD6A94431525E5BEAB823; };
 A916B6F08CCC1073CC4F6B14 = { isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "sources/camera_controller.swift"; sourceTree = "<group>"; };
 AC5A46CDB7661003C447C623 = { isa = PBXBuildFile; fileRef = A916B6F08CCC1073CC4F6B14; };

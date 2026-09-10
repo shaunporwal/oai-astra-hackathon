@@ -13,9 +13,9 @@ struct FrameAnalysis: Decodable {
     let redness: RednessOverlay; let pupil: Ellipse?; let iris: Ellipse?
 }
 struct Snapshot: Decodable { let case_id: String; let geometry: FrameAnalysis }
-struct EndpointMeasurement: Decodable { let name: String; let value: Double?; let status: String }
+struct BackendEndpointMeasurement: Decodable { let name: String; let value: Double?; let status: String }
 struct Endpoint: Decodable, Identifiable {
-    let target_id: String; let name: String; let status: String; let observation: String; let limitations: [String]; let measurements: [EndpointMeasurement]
+    let target_id: String; let name: String; let status: String; let observation: String; let limitations: [String]; let measurements: [BackendEndpointMeasurement]
     var id: String { target_id }
 }
 struct EndpointAssessment: Decodable { let targets: [Endpoint] }

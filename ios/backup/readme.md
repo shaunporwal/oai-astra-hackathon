@@ -12,7 +12,7 @@ Independent SwiftUI/AVFoundation client for iPhone 15 Pro, with iOS 17+ deployme
 - Send the exact JPEG/options to the shared Python snapshot endpoint. Display native overlays and local measurements.
 - Explicit **Ask Astra** action for the existing six-target assessment. No OpenAI credential is stored on the phone. No automatic API requests or retry loops.
 
-Swift only handles camera, region selection, transport and presentation. Measurement algorithms remain in Python. The browser's live automatic-selection controller is not ported into this backup client; capture is manual. Full offline analysis and on-phone Astra inference are not implemented.
+Swift only handles camera, region selection, transport and presentation. The transport/models are shared from `ios/shared/analysis_client.swift`, referenced by the Xcode target. Measurement algorithms remain in Python. The browser's live automatic-selection controller is not ported into this backup client; capture is manual. Full offline analysis and on-phone Astra inference are not implemented.
 
 ## Build
 

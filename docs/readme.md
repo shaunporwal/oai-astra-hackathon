@@ -27,6 +27,8 @@ The machine-readable target specification is [specs/details.json](../specs/detai
 
 ## Development
 
+- [OptLab integration review](development/optlab-integration-review.md): partner branch, reuse plan and shared-client bridge.
+
 - [Measurement contract](development/measurement-contract.md): shared analysis API and module boundaries.
 
 - [Architecture](development/architecture.md): module boundaries and output contracts.
