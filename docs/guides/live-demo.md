@@ -63,3 +63,7 @@ The dashboard's Astra action now requests capture quality and all six `specs/det
 Results are saved as `endpoint-prediction.json`, separately from older quality-only `prediction.json` files. Reopening a prior case and requesting the new assessment incurs a new API request; completed endpoint results are cached. The CLI remains quality-only. The target-specification hash and expanded prompt hash are recorded for reproducibility. The server rejects missing/duplicate targets, unknown evidence indices and claims that selected stills establish a light reflex. There are no additional automated API calls.
 
 The pupil/iris measurement now supersedes the earlier all-null behavior above: its value comes from local saved-JPEG geometry when accepted, with status estimated and validated=false. The other measurements remain null. See [current geometry status](pupil-ratio.md).
+
+## Compact dashboard
+
+Desktop layout keeps camera, controls, local metrics, saved-image summary and endpoint summaries in one viewport. Expand each endpoint, capture observations, or Camera & help for details. Expanded content can scroll within its panel. Narrow screens and short windows use a stacked layout with normal scrolling for readability. No information or capture action was removed.

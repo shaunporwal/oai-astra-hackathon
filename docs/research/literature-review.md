@@ -19,7 +19,7 @@ For our project: begin with a dimensionless pupil/iris ratio. Timed reflex testi
 
 - **Study:** Cirrhosis cohort; device/lighting correction and serum bilirubin reference.
 - **Finding:** Scleral comparison r=0.89, n=66, for the reported S8 analysis (Figure 6).
-- **Limit:** Correlation is not individual diagnostic accuracy; this was calibrated imaging.
+- **Limit:** Correlation is not individual diagnostic accuracy; this was calibrated imaging. The Methods describe fitting and evaluating the regression on the same samples, rather than independent held-out validation.
 - **Presentation wording:** “Calibrated scleral smartphone imaging has shown association with serum bilirubin.”
 
 For our project: raw b* can be explored as an image feature, but a serum estimator needs paired lab data and capture calibration. The paper reports [anonymized research data](https://doi.org/10.5522/04/24083487.v1); contents and reuse terms have not been checked here.
@@ -80,3 +80,7 @@ Correct percent constriction: `100 × (D_baseline − D_min) / D_baseline`, with
 4. **Validation gap:** Compare subjects and capture sessions against suitable references before making clinical claims. Trial use requires endpoint-specific validation beyond this prototype.
 
 All suggested slide sentences above are paraphrases, not direct quotations. Use the DOI links in your bibliography and the full-text pages' PDF buttons to obtain papers. Figures are pointers for review, not a statement that reuse permissions have been checked. No paper PDFs were downloaded in this pass. Publisher pages supplied full text for L01–L03; L04 was checked through indexed primary article/PubMed content; L05 through PubMed and primary article content.
+
+## Clinical product direction
+
+See [clinical value](clinical-value.md) for additional patient-operated capture, iPhone macro field-imaging and corneal-opacity diagnostic-accuracy studies, plus recommendations for choosing a clinical workflow.

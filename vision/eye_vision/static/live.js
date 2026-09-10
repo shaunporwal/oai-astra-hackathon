@@ -41,8 +41,13 @@ function renderEndpoints(assessment){
   const container=$('endpoints');container.replaceChildren();
   if(!assessment?.targets?.length){container.textContent='No endpoint assessment returned; model abstained or response was incomplete.';return;}
   for(const target of assessment.targets){
-    const section=document.createElement('section');
-    const title=document.createElement('h3');title.textContent=target.name;
+    const section=document.createElement('details');
+    const title=document.createElement('summary');
+    const name=document.createElement('strong');name.textContent=target.name;
+    const status=document.createElement('span');status.className='endpoint-status';
+    const measured=target.measurements.find(m=>m.value!=null);
+    status.textContent=measured?`${Number(measured.value).toFixed(3)} · estimate`:target.status.replaceAll('_',' ');
+    title.append(name,status);
     const body=document.createElement('p');body.textContent=`${target.status}: ${target.observation}`;
     const limits=document.createElement('p');limits.textContent=target.limitations.join(' ');
     const values=document.createElement('p');values.textContent=target.measurements.map(m=>`${m.name}: ${m.value??'—'} (${m.status})`).join('; ');

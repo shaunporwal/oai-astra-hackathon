@@ -11,6 +11,8 @@ Start with the [iPhone runbook](guides/iphone-runbook.md) for capture and proces
 
 ## Research
 
+- [Clinical value](research/clinical-value.md): evidence, endpoint relevance and proposed clinical workflow.
+
 - [Literature review](research/literature-review.md): paper links, results, limitations, and slide wording.
 - [Target feasibility](research/target-feasibility.md): which measurements fit the macro capture setup.
 - [Data sources](research/data-sources.md): acquisition notes, dataset candidates, and capture provenance.
