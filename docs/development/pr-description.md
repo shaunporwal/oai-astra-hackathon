@@ -25,3 +25,5 @@ Review results now prioritize observed-feature cards and compact, unit-formatted
 An on-device SwiftData/SQLite library now retains captured/imported images and their latest analysis for offline reopening. Older app JPEGs migrate once without deletion. Disk-reopen, review roundtrip and idempotent migration checks passed; the signed update was installed/launched and database files confirmed on the iPhone. CloudKit is disabled; new Astra requests still use the Mac backend.
 
 Mobile Astra review now uses deduplicated Mac background jobs with short status polling and cached-result recovery, fixing the case where the phone times out while the server finishes successfully. New native captures use combined pupil/iris and region-based vessel analysis with shared overlays. 39 Python tests and a native recovery check passed without a paid request.
+
+The review modal pins its image and capture-status row while the report scrolls underneath. A plain-language takeaway precedes Observed features and explicitly distinguishes visible features from an established disease diagnosis. Verified with signed/device and simulator builds and a cached-result layout inspection.

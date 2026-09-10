@@ -278,3 +278,9 @@ Investigated recent mobile cases and found completed six-target Astra results de
 Removed the native conjunctival/pupil mode selector for new captures, added combined local analysis and displayed existing pupil/iris candidate boundaries plus available vessel masks together on saved-image/review canvases. Vessel analysis still needs a selected conjunctival region; no automatic tissue segmentation or Astra pixel-mask generation is claimed. Detailed design/limits and the official documentation consulted are in `docs/development/review-jobs.md`.
 
 Validation: 39 Python tests passed, including delayed-job deduplication, cache recovery, failure/interrupted status and combined analysis. Signed phone build passed and the updated app was installed/launched after restarting the Mac service and refreshing pairing. A native Swift client recovered a recent completed real six-target result without an OpenAI submission. No API credits were used for this fix.
+
+## 2026-09-10 — Pinned review image and plain-language takeaway
+
+Moved the saved image, experimental overlay legend and capture/observed-count row outside the modal ScrollView. The report below that row scrolls independently; close and outside-tap dismissal remain available. Image height adapts to the available screen height. Added a Main takeaway card before Observed features, derived from the existing observed target titles, with explicit disease-status wording. Current endpoint observations do not encode a supported disease diagnosis, so the UI says “Disease status: not established”; it does not infer disease or normality from the observed count. No new model request or response schema change is involved, and saved reviews work unchanged.
+
+Validation: signed device and simulator builds passed; inspected the populated simulator review layout using a cached result. Installed and launched on the connected iPhone. No API calls were made.

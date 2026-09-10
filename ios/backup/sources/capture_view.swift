@@ -183,17 +183,21 @@ struct CaptureView: View {
                         }.accessibilityLabel("Close review")
                     }.padding(.horizontal,20).padding(.top,10)
                     Divider()
+                    VStack(alignment:.leading,spacing:8) {
+                        if let frozen,let image=UIImage(data:frozen) {
+                            FrameCanvas(image:image,roi:.constant(roi),analysis:snapshot?.geometry,target:"combined",changed:{})
+                                .frame(height:min(180,geometry.size.height*0.23)).allowsHitTesting(false)
+                                .accessibilityLabel("Captured image with experimental segmentation overlays")
+                            if snapshot != nil {
+                                Text("Candidate outlines: pupil green · iris pink · vessels shaded. Only available fits are shown.")
+                                    .font(.caption2).foregroundStyle(Theme.Colors.inkSecondary)
+                            }
+                        }
+                        if let review { reviewStatus(review) }
+                    }.padding(.horizontal,20).padding(.vertical,12)
+                    Divider()
                     ScrollView {
                         VStack(alignment:.leading,spacing:16) {
-                            if let frozen,let image=UIImage(data:frozen) {
-                                FrameCanvas(image:image,roi:.constant(roi),analysis:snapshot?.geometry,target:"combined",changed:{})
-                                    .frame(height:180).allowsHitTesting(false)
-                                    .accessibilityLabel("Captured image with experimental segmentation overlays")
-                                if snapshot != nil {
-                                    Text("Candidate outlines: pupil green · iris pink · vessels shaded. Only available fits are shown.")
-                                        .font(.caption2).foregroundStyle(Theme.Colors.inkSecondary)
-                                }
-                            }
                             if busy { ProgressView("Reviewing your saved frame…").frame(maxWidth:.infinity) }
                             if review == nil { Text(message).font(.subheadline).accessibilityIdentifier("status") }
                             if snapshot != nil { results }
@@ -221,11 +225,7 @@ struct CaptureView: View {
             if let review {
                 let observed=review.endpoint_assessment.targets.filter { $0.status == "observed" }
                 let unavailable=review.endpoint_assessment.targets.filter { $0.status != "observed" }
-                HStack {
-                    Chip(text:"Capture: \(review.prediction)",tone:.info,systemImage:"viewfinder")
-                    Spacer()
-                    Text("\(observed.count) observed").font(.subheadline.weight(.semibold))
-                }
+                reviewTakeaway(observed)
                 Text("Observed features").font(.headline)
                 if observed.isEmpty {
                     Text("No target has a confident visual observation in this image.")
@@ -268,6 +268,27 @@ struct CaptureView: View {
                 measurementSummary
             }
         }
+    }
+
+    private func reviewStatus(_ review: Review) -> some View {
+        HStack {
+            Chip(text:"Capture: \(review.prediction)",tone:.info,systemImage:"viewfinder")
+            Spacer()
+            Text("\(review.endpoint_assessment.targets.filter { $0.status == "observed" }.count) observed")
+                .font(.subheadline.weight(.semibold))
+        }
+    }
+
+    private func reviewTakeaway(_ observed: [Endpoint]) -> some View {
+        VStack(alignment:.leading,spacing:8) {
+            Text("Main takeaway").font(.headline)
+            Text(observed.isEmpty ? "This image does not provide a clear assessment of the target features." : "Visible features: " + observed.map { endpointTitle($0) }.joined(separator:", ") + ".")
+                .font(.subheadline)
+            Text("Disease status: not established")
+                .font(.subheadline.weight(.semibold))
+            Text("Visible features are not confirmed disease findings. This review cannot confirm or rule out an eye condition.")
+                .font(.caption).foregroundStyle(Theme.Colors.inkSecondary)
+        }.glassCard(padding:16)
     }
 
     private func endpointTitle(_ endpoint: Endpoint) -> String {
