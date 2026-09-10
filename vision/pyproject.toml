@@ -1,0 +1,16 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "eye-vision"
+version = "0.1.0"
+description = "Local eye video capture and model integration pipeline"
+requires-python = ">=3.11"
+dependencies = ["opencv-python>=4.12,<5", "numpy>=2,<3"]
+
+[project.scripts]
+eye-vision = "eye_vision.cli:main"
+
+[tool.setuptools.packages.find]
+include = ["eye_vision*"]
