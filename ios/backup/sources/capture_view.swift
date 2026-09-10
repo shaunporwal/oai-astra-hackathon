@@ -534,8 +534,11 @@ struct CaptureView: View {
     private func recordConnectionDiagnostic(error: Error?) {
         // Local development diagnostics contain no token, image or model response.
         let failure=error as NSError?
+        let underlying=failure?.userInfo[NSUnderlyingErrorKey] as? NSError
         let record: [String:Any] = ["connected":error == nil,"server":pairing?.server_url ?? "",
             "error_domain":failure?.domain ?? "","error_code":failure?.code ?? 0,
+            "network_path":String(describing:underlying?.userInfo["_NSURLErrorNWPathKey"] ?? failure?.userInfo["_NSURLErrorNWPathKey"] ?? ""),
+            "underlying_domain":underlying?.domain ?? "","underlying_code":underlying?.code ?? 0,
             "timestamp":ISO8601DateFormatter().string(from:Date())]
         if let data=try? JSONSerialization.data(withJSONObject:record) {
             try? data.write(to:FileManager.default.temporaryDirectory.appendingPathComponent("connection-status.json"),options:.atomic)
