@@ -164,3 +164,13 @@ Validation: Swift SDK typecheck passed, and the complete unsigned iOS device bui
 ### Connected iPhone follow-up
 
 After the user connected the phone, CoreDevice detected the iPhone 15 Pro as available and paired over USB. Device inspection reported Developer Mode disabled, and the Mac still had zero valid code-signing identities. Opened the backup project in Xcode and requested user completion of Developer Mode and account/team setup. Checked for newer Xcode device-support components; none were available. The platform-download command requested an 8.52 GB simulator runtime; stopped that download because a simulator is not needed for direct-target compilation and physical-device installation. The phone subsequently became temporarily unavailable, consistent with disconnection or restart; no installation has been claimed. No serial numbers or device identifiers are committed.
+
+## 2026-09-10 — Capture display and session recovery fix
+
+Addressed the report that manual/automatic capture showed no image. Identified two failure-prone paths: restarted servers invalidate an already-open page's token, and the old save flow did not display the JPEG until annotation completed. The user's browser blocked AppleScript JavaScript inspection, so the exact original browser error was not retrieved; the fixes were verified with reproduced failures instead.
+
+Display the raw captured JPEG immediately below the capture controls. Report capture/save progress and errors there, disable duplicate manual clicks during encoding, keep the raw preview if annotation fails, and enable Astra only after a confirmed saved case. Added a once-only session refresh/retry after HTTP 403; rejected authorization requests have not executed the operation. Use browser Image decoding for optional overlays instead of depending on createImageBitmap. Capture failures remain distinct from a successful save.
+
+Added an isolated Playwright regression script using a simulated camera and temporary server: actual manual button, stale-token recovery, injected overlay failure, injected server error, automatic capture and thumbnail placement all passed. Desktop document stayed within 1280×720. No API requests were made.
+
+The connected iPhone now reports Developer Mode enabled and device services available. Signing identity/team setup remains outstanding; no native app installation has been claimed.

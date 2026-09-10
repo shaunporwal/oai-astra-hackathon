@@ -1,19 +1,35 @@
 const $ = id => document.getElementById(id);
 const video=$('video'), overlay=$('overlay'), ctx=overlay.getContext('2d');
 const sample=document.createElement('canvas'), sc=sample.getContext('2d');
-const token=document.querySelector('meta[name=session-token]').content;
+let token=document.querySelector('meta[name=session-token]').content;
+let sessionRefresh=null;
 let stream=null, epoch=0, running=false, mode=null, timer=null, fileUrl=null;
 let savedCase=null, snapshotUrl=null, astra=false, reviewing=false, saving=false;
 let roi=null, roiRevision=0, dragStart=null;
 let autoSelecting=false; const selector=new FrameSelector();
 function message(text){$('message').textContent=text;}
 function sync(){ $('target').disabled=saving||reviewing;$('clear-roi').disabled=saving||reviewing; $('auto').disabled=!running||saving||reviewing; $('auto').textContent=autoSelecting?'Cancel auto-selection':'Auto-select one frame'; $('save').disabled=!running||saving||reviewing; $('file').disabled=saving||reviewing; $('review').disabled=!savedCase||!astra||reviewing||saving; }
+async function refreshSession(){
+  if(!sessionRefresh)sessionRefresh=(async()=>{
+    const response=await fetch('/',{cache:'no-store'});
+    if(!response.ok)throw new Error('Session expired. Refresh the dashboard on this Mac.');
+    const html=new DOMParser().parseFromString(await response.text(),'text/html');
+    const next=html.querySelector('meta[name=session-token]')?.content;
+    if(!next)throw new Error('Session expired. Refresh the dashboard on this Mac.');
+    token=next;
+  })().finally(()=>{sessionRefresh=null;});
+  return sessionRefresh;
+}
 async function api(path, options={}){
-  const response=await fetch(path,{...options,headers:{'x-live-token':token,...options.headers}});
+  const send=()=>fetch(path,{...options,headers:{'x-live-token':token,...options.headers}});
+  let response=await send();
+  // A rejected session has not executed the operation. Retry once with the current token.
+  if(response.status===403){await refreshSession();response=await send();}
   if(!response.ok){let data;try{data=await response.json();}catch{} throw new Error(data?.detail||`Request failed (${response.status})`);}
   return response;
 }
-function resetReview(){ $('saved-geometry').textContent='No saved measurement.'; $('endpoints').textContent='Send a saved frame to populate target observations.';savedCase=null;$('snapshot').hidden=true;$('review-text').textContent='';if(snapshotUrl)URL.revokeObjectURL(snapshotUrl);snapshotUrl=null;$('saved').textContent='Frames are processed locally and saved only when requested.';$('review-state').textContent=astra?'Ready for a saved frame':'API key not configured';sync();}
+function captureStatus(text,error=false){$('saved').textContent=text;$('saved').classList.toggle('capture-error',error);}
+function resetReview(){ $('saved-geometry').textContent='No saved measurement.'; $('endpoints').textContent='Send a saved frame to populate target observations.';savedCase=null;$('saved').classList.remove('capture-error');$('snapshot').hidden=true;$('review-text').textContent='';if(snapshotUrl)URL.revokeObjectURL(snapshotUrl);snapshotUrl=null;$('saved').textContent='Frames are processed locally and saved only when requested.';$('review-state').textContent=astra?'Ready for a saved frame':'API key not configured';sync();}
 function stop(){epoch++;roi=null;roiRevision++;autoSelecting=false;selector.reset();$('guidance').textContent='Automatic selection is off.';$('capabilities').textContent='Camera controls: awaiting connection.';running=false;clearTimeout(timer);if(stream)stream.getTracks().forEach(t=>t.stop());stream=null;video.pause();video.srcObject=null;video.removeAttribute('src');video.load();if(fileUrl)URL.revokeObjectURL(fileUrl);fileUrl=null;ctx.clearRect(0,0,overlay.width,overlay.height);$('stop').disabled=true;$('mode').textContent='STOPPED';$('source').textContent='No input';$('tracking').textContent='Stopped';for(const id of ['vessels','ratio','sharpness','glare','latency'])$(id).textContent='—';sync();}
 async function listCameras(){const devices=await navigator.mediaDevices.enumerateDevices();$('cameras').replaceChildren();for(const d of devices.filter(d=>d.kind==='videoinput')){const opt=new Option(d.label||'Camera',d.deviceId);$('cameras').add(opt);}const iphone=Array.from($('cameras').options).find(o=>/iphone|shaun camera/i.test(o.text));if(iphone)$('cameras').value=iphone.value;$('start').disabled=!$('cameras').options.length;}
 $('discover').onclick=async()=>{try{const permission=await navigator.mediaDevices.getUserMedia({video:true,audio:false});permission.getTracks().forEach(t=>t.stop());await listCameras();message('Choose the iPhone camera, then Start camera. Check the macro lens is over the active rear camera.');}catch(e){message(`Camera access failed: ${e.message}`);}};
@@ -64,16 +80,31 @@ function drawAnnotations(context,r){
 }
 function draw(r){overlay.width=r.image_size_wh[0];overlay.height=r.image_size_wh[1];ctx.clearRect(0,0,overlay.width,overlay.height);drawAnnotations(ctx,r);}
 async function saveFrame(blob,captureMode,options=currentOptions()){
-  saving=true;sync();
+  saving=true;resetReview();sync();
+  // Display the captured bytes immediately. Optional annotation must never hide a capture.
+  snapshotUrl=URL.createObjectURL(blob);$('snapshot').src=snapshotUrl;$('snapshot').hidden=false;
+  captureStatus('Frame captured locally · saving to the Mac…');$('review-state').textContent='Saving captured frame…';
   try{
     const result=await(await api('/api/snapshot',{method:'POST',headers:{...analysisHeaders(options),'x-source-mode':captureMode},body:blob})).json();
-    resetReview();savedCase=result.case_id;snapshotUrl=await annotatedSnapshot(blob,result.geometry);
-    $('saved-geometry').textContent=savedGeometryText(result.geometry);$('snapshot').src=snapshotUrl;$('snapshot').hidden=false;
-    $('saved').textContent=`Saved ${result.case_id} (${result.mode})`;$('review-state').textContent=astra?'Saved frame ready':'API key not configured';
+    savedCase=result.case_id;$('saved-geometry').textContent=savedGeometryText(result.geometry);
+    captureStatus(`Saved ${result.case_id} (${result.mode}) · captured image shown below`);
+    $('review-state').textContent=astra?'Saved frame ready':'API key not configured';
     message(`Frame, measurements and masks saved to ${result.saved_directory}`);
-  }catch(e){message(e.message);}finally{saving=false;sync();}
+    try{
+      const annotated=await annotatedSnapshot(blob,result.geometry);
+      const raw=snapshotUrl;snapshotUrl=annotated;$('snapshot').src=annotated;URL.revokeObjectURL(raw);
+    }catch{captureStatus(`Saved ${result.case_id} · original image shown; overlay unavailable`);}
+  }catch(e){captureStatus(`Save failed: ${e.message} Captured image is shown but has not been confirmed saved.`,true);$('review-state').textContent='Captured locally · save failed';message(e.message);}
+  finally{saving=false;sync();}
 }
-$('save').onclick=async()=>{autoSelecting=false;selector.reset();const options=currentOptions(),captureMode=mode;try{await saveFrame(await capture(),captureMode,options);}catch(e){message(e.message);}};
+$('save').onclick=async()=>{
+  if(saving||reviewing)return;
+  autoSelecting=false;selector.reset();saving=true;sync();captureStatus('Capturing frame…');
+  const options=currentOptions(),captureMode=mode;
+  try{await saveFrame(await capture(),captureMode,options);}
+  catch(e){captureStatus(`Capture failed: ${e.message}`,true);message(e.message);}
+  finally{saving=false;sync();}
+};
 $('auto').onclick=()=>{autoSelecting=!autoSelecting;selector.reset();$('guidance').textContent=autoSelecting?'Hold the eye centered and steady. No API call will be made.':'Automatic selection is off.';sync();};
 $('review').onclick=async()=>{reviewing=true;sync();const caseId=savedCase;$('review-state').textContent='Astra is reviewing…';try{const result=await(await api(`/api/review/${caseId}`,{method:'POST'})).json();if(savedCase!==caseId)return;renderEndpoints(result.endpoint_assessment);if(result.saved_geometry)$('saved-geometry').textContent=savedGeometryText(result.saved_geometry);$('review-state').textContent=`Capture: ${result.prediction}`;$('review-text').textContent=result.review?[...result.review.observations,...result.review.limitations].join('\n\n'):'Astra abstained or the response was incomplete.';}catch(e){$('review-state').textContent='Review unavailable';message(e.message);}finally{reviewing=false;sync();}};
 fetch('/api/status').then(r=>r.json()).then(r=>{astra=r.astra_available;$('review-state').textContent=astra?'Ready for a saved frame':'API key not configured';sync();}).catch(()=>message('Cannot reach the local analysis server.'));
@@ -112,9 +143,13 @@ function savedGeometryText(g){
   return g.pupil_to_iris_ratio==null?`Saved frame ratio unavailable: ${g.ratio_assessment.reason}`:`Saved frame ratio: ${g.pupil_to_iris_ratio.toFixed(3)} · local experimental estimate.`;
 }
 async function annotatedSnapshot(blob,g){
-  const bitmap=await createImageBitmap(blob);const c=document.createElement('canvas');c.width=bitmap.width;c.height=bitmap.height;
-  const context=c.getContext('2d');context.drawImage(bitmap,0,0);bitmap.close();drawAnnotations(context,g);
-  return new Promise(resolve=>c.toBlob(b=>resolve(URL.createObjectURL(b||blob)),'image/jpeg',.92));
+  const image=new Image();const url=URL.createObjectURL(blob);
+  try{
+    await new Promise((resolve,reject)=>{image.onload=resolve;image.onerror=()=>reject(new Error('Image decoding failed'));image.src=url;});
+    const c=document.createElement('canvas');c.width=image.naturalWidth;c.height=image.naturalHeight;
+    const context=c.getContext('2d');context.drawImage(image,0,0);drawAnnotations(context,g);
+    return await new Promise((resolve,reject)=>c.toBlob(b=>b?resolve(URL.createObjectURL(b)):reject(new Error('Overlay encoding failed')),'image/jpeg',.92));
+  }finally{URL.revokeObjectURL(url);}
 }
 function changeRegion(){roiRevision++;selector.reset();autoSelecting=false;sync();$('guidance').textContent=$('target').value==='redness'?'Drag inside exposed white-eye tissue. Keep iris, skin and lids outside the rectangle.':'Center the pupil and show the outer iris boundary.';}
 $('target').onchange=()=>{roi=null;changeRegion();};
