@@ -12,7 +12,7 @@ SwiftUI/AVFoundation client with visual components adapted from the partner OptL
 - Send the exact JPEG/options to the shared Python snapshot endpoint. Display native overlays and local measurements.
 - Explicit **Analyze + Ask Astra** action for local measurement followed by the existing six-target assessment. An optional local-only dropdown uses no API credits. No OpenAI credential is stored on the phone. No automatic API requests or retry loops.
 
-Swift only handles camera, region selection, transport and presentation. The transport/models are shared from `ios/shared/analysis_client.swift`, referenced by the Xcode target. Measurement algorithms remain in Python. The browser's live automatic-selection controller is not ported into this backup client; capture is manual. Full offline analysis and on-phone Astra inference are not implemented.
+Swift only handles camera, region selection, transport and presentation. The transport/models are shared from `ios/shared/analysis_client.swift`, referenced by the Xcode target. Measurement algorithms remain in Python. The browser's live automatic-selection controller is not ported into this backup client; native automatic capture now uses local sharpness/exposure/stability checks. Full offline analysis and on-phone Astra inference are not implemented.
 
 ## Build
 
@@ -72,3 +72,9 @@ The primary Astra action accepts a saved frame without a drawn ROI. A conjunctiv
 ### Square framing
 
 The live viewfinder is square and uses aspect-fill. The video-frame encoder saves the corresponding centered square before resizing to 960×960; the review canvas and backend therefore operate on square pixels without display-only stretching. The portrait sensor frame loses its excess top/bottom area. Keep the eye inside the visible square. This changes newly captured files only.
+
+### Automatic capture and compact controls
+
+The live capture screen uses a height-aware square viewfinder without scrolling. Retake is pinned in the top header whenever a frame exists, including Results. Tap **Auto capture when sharp** to arm a single local capture, or **Capture frame** for manual capture. Auto capture can be canceled and stops after 20 seconds, on opening Settings, when the app leaves the foreground, or after saving a frame. It never sends an Astra request.
+
+Quality is measured on a 96×96 grayscale sample of the center 70% of the square. Autofocus and autoexposure must settle; mean intensity must be 45–225, pixels below 25 at most 35%, pixels at least 248 at most 8%, and Laplacian variance at least 80. Four eligible frames across at least 0.8 seconds are required, with no gap over 0.6 seconds and mean absolute pixel change at most 5. The sharpest exact JPEG from this window is saved through the same manual-capture path. This is an experimental engineering gate: textured non-eye scenes can pass, and passing does not prove focus across all tissue or diagnostic adequacy. Thresholds need evaluation on actual eye captures.

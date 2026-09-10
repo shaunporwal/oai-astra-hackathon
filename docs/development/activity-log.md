@@ -220,3 +220,11 @@ Resolved portrait video letterboxing: the previous preview used aspect-fit insid
 Validation: standalone Swift crop checks passed for portrait, landscape and nonzero-origin square bounds; signed iPhone build succeeded. Physical framing still requires checking through the user's attachment. No API requests were made.
 
 Installed the square-capture build, refreshed USB pairing and successfully launched it on the connected iPhone.
+
+## 2026-09-10 — Compact capture screen and local automatic selection
+
+Moved Retake into the persistent top header for Review and Results. Replaced the live capture scroll view with a height-aware square viewfinder and compact focus guidance; manual and automatic capture actions stay in the bottom action area. Inspected the simulator screenshot at `vision/runs/native-compact-capture.png`: controls and guidance fit on screen without scrolling at the default text size.
+
+Added an explicit **Auto capture when sharp** action using native grayscale sharpness, exposure, focus/exposure settling and motion checks, with four eligible frames across at least 0.8 seconds. Saves the exact sharpest JPEG in that stable window through the existing capture method, then stops. Manual capture remains available. Cancellation resets state; opening Settings/backgrounding cancels; a 20-second timer also cancels even if camera frames stop arriving. This is an unvalidated image-quality heuristic, not an eye detector or diagnostic adequacy model. It makes no network or Astra request. Numerical thresholds and limitations are documented in the native README.
+
+Validation: Swift checks passed for sharpness/blur, dark/clipped exposure, focus settling, motion rejection, timing gaps, reset and exact best-frame retention. Signed device and simulator builds passed. Installed on the connected iPhone and refreshed pairing, but iOS blocked launch because the phone was locked; requested unlock. On-device automatic-capture behavior with the macro attachment remains to be checked. No API credits were used.

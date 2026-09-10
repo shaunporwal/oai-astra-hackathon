@@ -6,6 +6,7 @@ import SwiftUI
 final class CameraController: NSObject, ObservableObject, AVCaptureVideoDataOutputSampleBufferDelegate {
     let session = AVCaptureSession()
     @Published var latestJPEG: Data?
+    @Published var sample: CaptureSample?
     @Published var status = "Camera stopped"
     @Published var running = false
     @Published var focusLocked = false
@@ -30,7 +31,7 @@ final class CameraController: NSObject, ObservableObject, AVCaptureVideoDataOutp
     func stop() {
         queue.async {
             if self.session.isRunning { self.session.stopRunning() }
-            DispatchQueue.main.async { self.running = false; self.latestJPEG = nil; self.status = "Camera stopped" }
+            DispatchQueue.main.async { self.running = false; self.latestJPEG = nil; self.sample=nil;self.status = "Camera stopped" }
         }
     }
     private func configure() throws {
@@ -88,7 +89,17 @@ final class CameraController: NSObject, ObservableObject, AVCaptureVideoDataOutp
         let scale = min(1,960/crop.width)
         let resized = square.transformed(by: CGAffineTransform(scaleX: scale,y: scale))
         guard let cg = context.createCGImage(resized, from: resized.extent), let jpeg = UIImage(cgImage: cg).jpegData(compressionQuality: 0.92) else { return }
-        DispatchQueue.main.async { self.latestJPEG = jpeg }
+        // Central tissue detail is assessed independently of the full square JPEG.
+        let region=resized.extent.insetBy(dx:resized.extent.width*0.15,dy:resized.extent.height*0.15)
+        let detail=resized.cropped(to:region).transformed(by:CGAffineTransform(translationX:-region.minX,y:-region.minY))
+            .transformed(by:CGAffineTransform(scaleX:96/region.width,y:96/region.height))
+        var gray=[UInt8](repeating:0,count:96*96)
+        gray.withUnsafeMutableBytes { buffer in
+            context.render(detail,toBitmap:buffer.baseAddress!,rowBytes:96,bounds:CGRect(x:0,y:0,width:96,height:96),format:.L8,colorSpace:CGColorSpaceCreateDeviceGray())
+        }
+        let quality=CaptureQuality.measure(gray,side:96,focusSettled:!(device?.isAdjustingFocus ?? true) && !(device?.isAdjustingExposure ?? true))
+        let sample=CaptureSample(jpeg:jpeg,quality:quality,time:CMTimeGetSeconds(timestamp))
+        DispatchQueue.main.async { self.latestJPEG = jpeg;self.sample=sample }
     }
     private func report(_ text: String) { DispatchQueue.main.async { self.status = text } }
     enum CameraFailure: LocalizedError {

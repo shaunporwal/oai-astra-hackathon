@@ -21,6 +21,11 @@ struct CaptureView: View {
     @State private var connectionMessage="Checking Mac connection…"
     @State private var checkingConnection=false
 
+    @State private var autoCapture=false
+    @State private var autoStarted=Date()
+    @State private var captureGate=StableCaptureGate()
+    @State private var autoHint=""
+
     private var canAnalyze: Bool {
         frozen != nil && pairing != nil && !busy
     }
@@ -33,26 +38,44 @@ struct CaptureView: View {
         NavigationStack {
             ZStack {
                 AmbientBackground()
-                ScrollView {
-                    VStack(alignment:.leading,spacing:20) {
-                        header
-                        Text(connectionMessage).font(.caption).foregroundStyle(Theme.Colors.inkSecondary)
-                        stagePicker
-                        VStack(alignment:.leading,spacing:6) {
-                            Text(stageTitle).font(Theme.Typography.title)
-                            Text(stageDetail).font(.subheadline).foregroundStyle(Theme.Colors.inkSecondary)
+                VStack(spacing:10) {
+                    header.padding(.horizontal,20)
+                    if stage == 0 {
+                        GeometryReader { geometry in
+                            VStack(spacing:10) {
+                                Text("Center the eye · rear camera + 15× lens")
+                                    .font(.subheadline.weight(.semibold))
+                                captureCard
+                                    .frame(width:min(geometry.size.width, max(160,geometry.size.height-235)))
+                                Text(autoCapture ? autoHint : camera.sample?.quality.guidance ?? "Preparing camera…")
+                                    .font(.subheadline).multilineTextAlignment(.center).frame(minHeight:38)
+                                HStack {
+                                    Button(camera.focusLocked ? "Unlock focus" : "Lock focus") { camera.setFocusLocked(!camera.focusLocked) }
+                                    Spacer()
+                                    Text("Local quality check").foregroundStyle(Theme.Colors.inkSecondary)
+                                }.font(.caption).frame(minHeight:32)
+                                Text("Checks sharpness, exposure and stability; does not verify eye anatomy.")
+                                    .font(.caption2).foregroundStyle(Theme.Colors.inkSecondary).multilineTextAlignment(.center)
+                                Spacer(minLength:0)
+                            }.frame(maxWidth:.infinity)
+                        }.padding(.horizontal,20)
+                    } else {
+                        ScrollView {
+                            VStack(alignment:.leading,spacing:16) {
+                                stagePicker
+                                Text(stageTitle).font(Theme.Typography.title)
+                                Text(stageDetail).font(.subheadline).foregroundStyle(Theme.Colors.inkSecondary)
+                                if stage == 1 { captureCard;reviewControls }
+                                if stage == 2 { results }
+                                if busy { ProgressView().frame(maxWidth:.infinity) }
+                                Text(message).font(.footnote).foregroundStyle(Theme.Colors.inkSecondary)
+                                    .accessibilityIdentifier("status")
+                                Text("Research prototype · measurements are unvalidated and do not establish a diagnosis.")
+                                    .font(.caption2).foregroundStyle(Theme.Colors.inkSecondary)
+                            }.padding(20)
                         }
-                        if stage != 2 { captureCard }
-                        if stage == 0 { cameraGuidance }
-                        if stage == 1 { reviewControls }
-                        if stage == 2 { results }
-                        if busy { ProgressView().frame(maxWidth:.infinity) }
-                        Text(message).font(.footnote).foregroundStyle(Theme.Colors.inkSecondary)
-                            .accessibilityIdentifier("status")
-                        Text("Research prototype · measurements are unvalidated and do not establish a diagnosis.")
-                            .font(.caption2).foregroundStyle(Theme.Colors.inkSecondary)
-                    }.padding(20).disabled(busy)
-                }
+                    }
+                }.padding(.top,8).disabled(busy)
             }
             .foregroundStyle(Theme.Colors.ink)
             .toolbar(.hidden,for:.navigationBar)
@@ -62,7 +85,25 @@ struct CaptureView: View {
         .tint(Theme.Colors.info)
         .preferredColorScheme(.light)
         .task { loadUSBPairing();camera.start();await checkConnection() }
-        .onChange(of:scenePhase) { _,phase in if phase != .active { camera.stop() } else if frozen == nil { camera.start() } }
+        .onChange(of:scenePhase) { _,phase in if phase != .active { cancelAutoCapture();camera.stop() } else if frozen == nil { camera.start() } }
+        .onChange(of:settingsPresented) { _,shown in if shown { cancelAutoCapture() } }
+        .onReceive(camera.$sample) { sample in
+            guard autoCapture, frozen == nil, let sample else { return }
+            if Date().timeIntervalSince(autoStarted) > 20 {
+                cancelAutoCapture();autoHint="No stable capture yet. Adjust the view and try again.";message=autoHint
+                return
+            }
+            autoHint=sample.quality.guidance
+            if let jpeg=captureGate.accept(sample) {
+                cancelAutoCapture();capture(jpeg:jpeg)
+            } else if captureGate.count > 0 { autoHint="Hold still · \(captureGate.count)/4 stable frames" }
+        }
+        .task(id:autoCapture) {
+            guard autoCapture else { return }
+            do { try await Task.sleep(for:.seconds(20)) } catch { return }
+            guard autoCapture else { return }
+            cancelAutoCapture();autoHint="No stable capture yet. Adjust the view and try again."
+        }
     }
 
     private var header: some View {
@@ -71,10 +112,14 @@ struct CaptureView: View {
                 .frame(width:44,height:44).background(.white.opacity(0.6),in:Circle())
             VStack(alignment:.leading,spacing:2) {
                 Text("Eye Lab").font(.system(.title2,design:.rounded,weight:.bold))
-                Text("GUIDED MACRO CAPTURE").font(.system(size:10,weight:.semibold)).tracking(1.5)
+                Text(frozen == nil ? "MACRO CAPTURE" : "SAVED FRAME").font(.system(size:10,weight:.semibold)).tracking(1.5)
                     .foregroundStyle(Theme.Colors.inkSecondary)
             }
             Spacer()
+            if frozen != nil {
+                Button("Retake",systemImage:"arrow.counterclockwise") { retake() }
+                    .font(.subheadline.weight(.semibold)).frame(minHeight:44)
+            }
             Button { settingsPresented=true } label: {
                 Image(systemName:"slider.horizontal.3").font(.title3).frame(width:44,height:44)
                     .background(.white.opacity(0.65),in:Circle())
@@ -114,7 +159,7 @@ struct CaptureView: View {
             .aspectRatio(1,contentMode:.fit).clipped()
             HStack(spacing:8) {
                 Image(systemName:frozen == nil ? "camera" : "checkmark.circle")
-                Text(frozen == nil ? camera.status : "Capture retained on this phone")
+                Text(frozen == nil ? (camera.running ? "1× wide · center-square capture" : camera.status) : "Capture retained on this phone")
                     .font(.caption)
                 Spacer(minLength:0)
             }.padding(14)
@@ -122,20 +167,6 @@ struct CaptureView: View {
         .background(.white.opacity(0.65))
         .clipShape(RoundedRectangle(cornerRadius:Theme.Radius.card))
         .overlay(RoundedRectangle(cornerRadius:Theme.Radius.card).strokeBorder(.white.opacity(0.85)))
-    }
-
-    private var cameraGuidance: some View {
-        VStack(alignment:.leading,spacing:12) {
-            Label("Set up your view",systemImage:"viewfinder").font(.headline)
-            Text("Move slowly until tissue detail is sharp. Adjust your angle to move bright reflections away from the area you want to assess.")
-                .font(.subheadline).foregroundStyle(Theme.Colors.inkSecondary)
-            HStack {
-                Chip(text:"Manual capture",tone:.info,systemImage:"hand.tap")
-                Spacer(minLength:0)
-                Button(camera.focusLocked ? "Unlock focus" : "Lock focus") { camera.setFocusLocked(!camera.focusLocked) }
-                    .font(.subheadline.weight(.semibold)).frame(minHeight:44)
-            }
-        }.glassCard()
     }
 
     private var reviewControls: some View {
@@ -152,7 +183,6 @@ struct CaptureView: View {
                 if roi != nil { Button("Clear region") { roi=nil;snapshot=nil;review=nil } }
             }
             HStack {
-                Button("Retake",systemImage:"arrow.counterclockwise") { retake() }
                 Spacer()
                 if let localFile { ShareLink(item:localFile) { Label("Export",systemImage:"square.and.arrow.up") } }
             }.font(.subheadline.weight(.semibold)).frame(minHeight:44)
@@ -208,6 +238,17 @@ struct CaptureView: View {
 
     private var primaryAction: some View {
         VStack(spacing:8) {
+            if stage == 0 {
+                Button {
+                    if autoCapture { cancelAutoCapture() }
+                    else { captureGate.reset();autoStarted=Date();autoHint="Waiting for sharp, stable detail…";autoCapture=true }
+                } label: {
+                    Label(autoCapture ? "Cancel auto capture" : "Auto capture when sharp",systemImage:autoCapture ? "stop.circle" : "viewfinder")
+                        .frame(maxWidth:.infinity,minHeight:44)
+                }.buttonStyle(.bordered).disabled(camera.latestJPEG == nil)
+                Text(autoCapture || !autoHint.isEmpty ? autoHint : connectionMessage)
+                    .font(.caption2).lineLimit(2).multilineTextAlignment(.center)
+            }
             if busy {
                 Text("Processing your saved frame…").font(.caption)
             } else if stage != 0 && review == nil {
@@ -215,7 +256,7 @@ struct CaptureView: View {
                     .font(.caption).multilineTextAlignment(.center)
             }
             Button {
-                if stage == 0 { capture() }
+                if stage == 0 { capture(jpeg:camera.latestJPEG) }
                 else if review != nil { retake() }
                 else { Task { await analyze(includeAstra:true) } }
             } label: {
@@ -262,6 +303,7 @@ struct CaptureView: View {
     }
 
     private func retake() {
+        cancelAutoCapture();autoHint=""
         frozen=nil;localFile=nil;roi=nil;snapshot=nil;review=nil;stage=0
         message="Position the macro attachment and capture when detail is sharp."
         camera.start()
@@ -290,8 +332,10 @@ struct CaptureView: View {
             message="USB pairing could not be loaded. Paste the pairing configuration below."
         }
     }
-    private func capture() {
-        guard let data=camera.latestJPEG else { return }
+    private func cancelAutoCapture() { autoCapture=false;captureGate.reset() }
+    private func capture(jpeg: Data?) {
+        guard let data=jpeg else { return }
+        cancelAutoCapture()
         frozen=data;roi=nil;snapshot=nil;review=nil;stage=1;camera.stop()
         do {
             let directory=FileManager.default.urls(for:.documentDirectory,in:.userDomainMask)[0]
