@@ -4,6 +4,8 @@ Start with the [iPhone runbook](guides/iphone-runbook.md) for capture and proces
 
 ## Guides
 
+- [On-device image library](guides/image-library.md): local storage, reopening images/reviews and offline behavior.
+
 - [Minimal iPhone demo](guides/minimal-iphone-demo.md): shortest capture-to-Astra setup and current installation step.
 
 - [Backup iPhone app](../ios/backup/readme.md): native capture, signing, pairing and installation.

@@ -21,3 +21,5 @@ The latest native UX removes numbered steps: Manual/Auto capture stays on one pa
 Users can also choose an existing image with the system Photos picker. Imported images retain their whole framing, are orientation-normalized and resized to metadata-free JPEG, and use the same saved-image assessment path with explicit imported_image provenance. Swift image-preparation checks and 37 Python tests passed.
 
 Review results now prioritize observed-feature cards and compact, unit-formatted local measurements. Unassessable targets and lengthy limitations are collapsed; no new diagnoses, values or API requests are introduced by the presentation change.
+
+An on-device SwiftData/SQLite library now retains captured/imported images and their latest analysis for offline reopening. Older app JPEGs migrate once without deletion. Disk-reopen, review roundtrip and idempotent migration checks passed; the signed update was installed/launched and database files confirmed on the iPhone. CloudKit is disabled; new Astra requests still use the Mac backend.

@@ -7,7 +7,7 @@ SwiftUI/AVFoundation client with visual components adapted from the partner OptL
 - Rear **physical wide camera**, fixed at 1× to avoid automatic camera changes under the macro attachment.
 - Native live preview, autofocus/lock and bounded exposure compensation. No automatic torch or lens switching.
 - Capture the most recent video frame, center-cropped to a square and encoded as a 960×960 JPEG. This is a video-frame capture, not full-resolution still photography or saved video recording.
-- Retain captured JPEGs in the app Documents directory, with export through the share sheet.
+- Retain captured/imported JPEGs and assessments in the on-device SwiftData library, with export through the share sheet.
 - Mark a normalized conjunctival rectangle on the captured image, or choose pupil/iris mode.
 - Send the exact JPEG/options to the shared Python snapshot endpoint. Display native overlays and local measurements.
 - Explicit **Send to Astra** action for local measurement followed by the existing six-target assessment. An optional local-only dropdown uses no API credits. No OpenAI credential is stored on the phone. No automatic API requests or retry loops.
@@ -92,3 +92,7 @@ JPEG/HEIC/PNG and other still formats decodable by ImageIO are normalized to pix
 ### Structured findings summary
 
 The review popup leads with capture quality, observed features and available numeric measurements. Unassessable targets are collapsed together; measurement reasons and visual limitations are expandable. Original findings are retained verbatim. “Observed” indicates describable appearance, not a detected disease; numerical values are separately labeled as local experimental measurements. This works with already-saved backend assessments and does not require another Astra call.
+
+### Image library
+
+**Library** reopens saved images and completed assessments offline. SwiftData/SQLite and managed image files live under `Library/Application Support/eye-library` in the phone app container, with CloudKit disabled. Earlier Documents captures are imported once without deleting originals. New captures, imports and analyses persist automatically. See [image library](../../docs/guides/image-library.md) for storage and network behavior.

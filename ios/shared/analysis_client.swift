@@ -1,26 +1,26 @@
 import Foundation
 
 struct Pairing: Codable { let server_url: String; let pairing_token: String }
-struct ConnectionStatus: Decodable { let astra_available: Bool }
+struct ConnectionStatus: Codable { let astra_available: Bool }
 struct AnalysisOptions: Codable { let target: String; let roi: [Double]? }
 struct LocalMeasurement: Codable, Identifiable {
     let target_id: String; let name: String; let unit: String; let value: Double?; let status: String; let reason: String
     var id: String { target_id + ":" + name }
 }
-struct RednessOverlay: Decodable { let roi_xywh: [Double]?; let vessel_contours_xy: [[[Double]]] }
-struct Ellipse: Decodable { let center_xy: [Double]; let axes_wh: [Double]; let angle_degrees: Double }
-struct FrameAnalysis: Decodable {
+struct RednessOverlay: Codable { let roi_xywh: [Double]?; let vessel_contours_xy: [[[Double]]] }
+struct Ellipse: Codable { let center_xy: [Double]; let axes_wh: [Double]; let angle_degrees: Double }
+struct FrameAnalysis: Codable {
     let image_size_wh: [Double]; let measurements: [LocalMeasurement]
     let redness: RednessOverlay; let pupil: Ellipse?; let iris: Ellipse?
 }
-struct Snapshot: Decodable { let case_id: String; let geometry: FrameAnalysis }
-struct BackendEndpointMeasurement: Decodable { let name: String; let value: Double?; let status: String }
-struct Endpoint: Decodable, Identifiable {
+struct Snapshot: Codable { let case_id: String; let geometry: FrameAnalysis }
+struct BackendEndpointMeasurement: Codable { let name: String; let value: Double?; let status: String }
+struct Endpoint: Codable, Identifiable {
     let target_id: String; let name: String; let status: String; let observation: String; let limitations: [String]; let measurements: [BackendEndpointMeasurement]
     var id: String { target_id }
 }
-struct EndpointAssessment: Decodable { let targets: [Endpoint] }
-struct Review: Decodable { let prediction: String; let endpoint_assessment: EndpointAssessment }
+struct EndpointAssessment: Codable { let targets: [Endpoint] }
+struct Review: Codable { let prediction: String; let endpoint_assessment: EndpointAssessment }
 
 final class NoRedirects: NSObject, URLSessionTaskDelegate {
     func urlSession(_ session: URLSession, task: URLSessionTask, willPerformHTTPRedirection response: HTTPURLResponse, newRequest request: URLRequest, completionHandler: @escaping (URLRequest?) -> Void) { completionHandler(nil) }

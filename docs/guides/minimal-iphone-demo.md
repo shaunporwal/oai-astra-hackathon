@@ -49,3 +49,7 @@ The app now checks the authenticated Mac connection at startup and after pairing
 ## Use an existing photo
 
 Tap **Import from Photos**, choose an image and wait for the preview. The original photo stays unchanged; the app creates an orientation-corrected JPEG for analysis. The full image is retained without the camera's square crop. Optionally mark conjunctiva, then tap **Send to Astra**. Importing alone does not upload anything or use API credits. Close the review popup to return to the image, or use Retake to return to the camera. The Mac must still be running and connected for assessment.
+
+## Reopen saved images
+
+Tap **Library** next to Import Photos. Captures, imports and completed assessments are saved on the iPhone; reopening a saved review makes no API request. See [image library](image-library.md) for storage details.

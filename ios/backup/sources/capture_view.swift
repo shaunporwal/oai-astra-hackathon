@@ -3,6 +3,10 @@ import PhotosUI
 
 struct CaptureView: View {
     @StateObject private var camera=CameraController()
+    @StateObject private var library=CaptureLibrary()
+    @State private var libraryPresented=false
+    @State private var activeRecord: SavedCapture?
+    @State private var backendCaseCurrent=false
     @Environment(\.scenePhase) private var scenePhase
     @State private var pairingText=""
     @State private var pairing: Pairing?
@@ -69,11 +73,10 @@ struct CaptureView: View {
                                 Text("Auto checks sharpness, exposure and stability; it does not verify eye anatomy.")
                                     .font(.caption2).foregroundStyle(Theme.Colors.inkSecondary).multilineTextAlignment(.center)
                             } else {
-                                Picker("Measurement",selection:$target) {
+                                Picker("Measurement",selection:Binding(get:{target},set:{ target=$0;roi=nil;snapshot=nil;review=nil })) {
                                     Text("Conjunctival vessels").tag("redness")
                                     Text("Pupil / iris").tag("geometry")
                                 }.pickerStyle(.segmented)
-                                    .onChange(of:target) { _,_ in roi=nil;snapshot=nil;review=nil }
                                 Text(target == "redness" ? "Optional: drag over conjunctiva to include vessel measurements." : "Send this saved frame for Astra assessment.")
                                     .font(.caption).foregroundStyle(Theme.Colors.inkSecondary).multilineTextAlignment(.center)
                                 if roi != nil { Button("Clear region") { roi=nil;snapshot=nil;review=nil }.font(.caption) }
@@ -88,6 +91,7 @@ struct CaptureView: View {
             .safeAreaInset(edge:.bottom,spacing:0) { primaryAction.disabled(reviewPresented) }
             .overlay { if reviewPresented { reviewModal } }
             .sheet(isPresented:$settingsPresented) { settings }
+            .sheet(isPresented:$libraryPresented) { librarySheet }
             .photosPicker(isPresented:$photoPickerPresented,selection:$photoSelection,matching:.images,preferredItemEncoding:.current)
             .alert("Could not import photo",isPresented:$importErrorPresented) {
                 Button("OK",role:.cancel) {}
@@ -102,6 +106,10 @@ struct CaptureView: View {
             loadUSBPairing();camera.start();if captureMode == "auto" { armAutoCapture() };await checkConnection()
         }
         .onChange(of:scenePhase) { _,phase in if phase != .active { cancelAutoCapture();camera.stop() } else if frozen == nil && !photoPickerPresented && !importing { camera.start() } }
+        .onChange(of:libraryPresented) { _,shown in
+            if shown { cancelAutoCapture();camera.stop();persistCurrent() }
+            else if frozen == nil { camera.start() }
+        }
         .onChange(of:photoPickerPresented) { _,shown in
             if shown { cancelAutoCapture();camera.stop() }
             else if frozen == nil && !importing { camera.start() }
@@ -320,10 +328,16 @@ struct CaptureView: View {
 
     private var primaryAction: some View {
         VStack(spacing:8) {
-            Button { photoPickerPresented=true } label: {
-                Label(importing ? "Loading photo…" : "Import from Photos",systemImage:"photo.on.rectangle")
-                    .frame(maxWidth:.infinity,minHeight:44)
-            }.buttonStyle(.bordered).disabled(busy || importing)
+            HStack {
+                Button { photoPickerPresented=true } label: {
+                    Label(importing ? "Loading…" : "Import Photos",systemImage:"photo.on.rectangle")
+                        .frame(maxWidth:.infinity,minHeight:44)
+                }
+                Button { libraryPresented=true } label: {
+                    Label("Library",systemImage:"square.stack")
+                        .frame(maxWidth:.infinity,minHeight:44)
+                }
+            }.font(.subheadline).buttonStyle(.bordered).disabled(busy || importing)
             if importing { ProgressView() }
             Text(frozen == nil ? (autoCapture || !autoHint.isEmpty ? autoHint : connectionMessage) : busy ? "Astra request in progress · tap to view" : review != nil ? "Assessment saved · tap to reopen" : "Sends this frame to OpenAI · uses API credits")
                 .font(.caption).lineLimit(2).multilineTextAlignment(.center)
@@ -340,6 +354,54 @@ struct CaptureView: View {
                 .disabled(importing || (frozen == nil ? (captureMode == "manual" && camera.latestJPEG == nil) : pairing == nil && review == nil && !busy))
         }.padding(.horizontal,20).padding(.top,12).padding(.bottom,8)
             .background(.ultraThinMaterial)
+    }
+
+    private var librarySheet: some View {
+        NavigationStack {
+            List {
+                if let error=library.error { Text(error).foregroundStyle(.red) }
+                if library.captures.isEmpty {
+                    ContentUnavailableView("No saved images",systemImage:"photo.on.rectangle",description:Text("Captured and imported images are saved here on your iPhone."))
+                }
+                ForEach(library.captures,id:\.id) { record in
+                    Button { openSaved(record) } label: {
+                        HStack(spacing:12) {
+                            if let image=UIImage(data:record.jpeg) {
+                                Image(uiImage:image).resizable().scaledToFit().frame(width:64,height:64)
+                                    .background(.black.opacity(0.05)).clipShape(RoundedRectangle(cornerRadius:10))
+                            }
+                            VStack(alignment:.leading,spacing:5) {
+                                Text(record.createdAt,format:.dateTime.month(.abbreviated).day().hour().minute()).font(.headline)
+                                Text(record.sourceMode == "imported_image" ? "Imported photo" : record.sourceMode == "live_camera" ? "Camera capture" : "Earlier saved image").font(.caption)
+                                Text(record.reviewData == nil ? "No saved Astra review" : "Astra review saved").font(.caption).foregroundStyle(Theme.Colors.inkSecondary)
+                            }
+                            Spacer()
+                            Image(systemName:"chevron.right").font(.caption)
+                        }
+                    }.foregroundStyle(Theme.Colors.ink)
+                }
+            }.navigationTitle("Image library").navigationBarTitleDisplayMode(.inline)
+                .toolbar { ToolbarItem(placement:.confirmationAction) { Button("Done") { libraryPresented=false } } }
+        }.tint(Theme.Colors.info).preferredColorScheme(.light)
+    }
+
+    private func persistCurrent() {
+        guard let activeRecord else { return }
+        do { try library.update(activeRecord,target:target,roi:roi,snapshot:snapshot,review:review) }
+        catch { message="Image retained; saving assessment failed: \(error.localizedDescription)" }
+    }
+    private func openSaved(_ record: SavedCapture) {
+        persistCurrent();cancelAutoCapture();camera.stop()
+        activeRecord=record;frozen=record.jpeg
+        sourceMode=record.sourceMode == "live_camera" ? "live_camera" : "imported_image"
+        target=record.target
+        roi=record.roiData.flatMap { try? JSONDecoder().decode([Double].self,from:$0) }
+        snapshot=record.snapshotData.flatMap { try? JSONDecoder().decode(Snapshot.self,from:$0) }
+        review=record.reviewData.flatMap { try? JSONDecoder().decode(Review.self,from:$0) }
+        backendCaseCurrent=false
+        localFile=try? library.export(record)
+        message="Opened from this iPhone. Saved images and reviews work offline."
+        libraryPresented=false
     }
 
     private var settings: some View {
@@ -386,6 +448,7 @@ struct CaptureView: View {
     }
 
     private func retake() {
+        persistCurrent();activeRecord=nil;backendCaseCurrent=false
         cancelAutoCapture();autoHint=""
         frozen=nil;localFile=nil;roi=nil;snapshot=nil;review=nil;reviewPresented=false
         message="Position the macro attachment and capture when detail is sharp."
@@ -395,6 +458,7 @@ struct CaptureView: View {
     #if DEBUG && targetEnvironment(simulator)
     // Optional local artifacts for layout inspection; unavailable in device builds.
     private func loadLayoutFixture() -> Bool {
+        if CommandLine.arguments.contains("--layout-library") { libraryPresented=true;return true }
         guard CommandLine.arguments.contains("--layout-review") || CommandLine.arguments.contains("--layout-captured") else { return false }
         let directory=FileManager.default.temporaryDirectory
         struct Fixture: Decodable { let snapshot: Snapshot;let review: Review }
@@ -452,24 +516,27 @@ struct CaptureView: View {
     }
     private func capture(jpeg: Data?, source: String = "live_camera") {
         guard let data=jpeg else { return }
+        persistCurrent();activeRecord=nil;backendCaseCurrent=false
         cancelAutoCapture()
         sourceMode=source
         frozen=data;roi=nil;snapshot=nil;review=nil;camera.stop()
         do {
-            let directory=FileManager.default.urls(for:.documentDirectory,in:.userDomainMask)[0]
-            let url=directory.appendingPathComponent("capture-\(UUID().uuidString.lowercased()).jpg")
-            try data.write(to:url,options:[.atomic,.completeFileProtection]);localFile=url
-            message="Frame retained on this phone. Select a region and analyze when paired."
-        } catch { localFile=nil;message="Frame is in memory, but local file saving failed." }
+            let record=try library.save(jpeg:data,sourceMode:source,target:target)
+            activeRecord=record;localFile=try? library.export(record)
+            message="Image saved in your iPhone library. Send to Astra when ready."
+        } catch { localFile=nil;message="Image is in memory, but library saving failed: \(error.localizedDescription)" }
+
     }
     @MainActor private func analyze(includeAstra: Bool) async {
         guard !busy,let pairing,let frozen else { return }
-        busy=true;defer { busy=false }
+        busy=true;defer { busy=false;persistCurrent() }
         let client=AnalysisClient(pairing:pairing)
         do {
-            if snapshot == nil {
+            if snapshot == nil || !backendCaseCurrent {
                 message="Measuring the saved frame on your Mac…"
                 snapshot=try await client.snapshot(jpeg:frozen,options:AnalysisOptions(target:target,roi:roi),sourceMode:sourceMode)
+                backendCaseCurrent=true
+                persistCurrent()
             }
             if includeAstra,let snapshot {
                 message="Astra is reviewing the saved frame…"
