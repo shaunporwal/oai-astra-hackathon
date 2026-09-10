@@ -111,7 +111,7 @@ struct CaptureView: View {
                     .padding(10).foregroundStyle(.white).background(.black.opacity(0.6),in:Capsule())
                     .padding(14).allowsHitTesting(false)
             }
-            .frame(height:300).clipped()
+            .aspectRatio(1,contentMode:.fit).clipped()
             HStack(spacing:8) {
                 Image(systemName:frozen == nil ? "camera" : "checkmark.circle")
                 Text(frozen == nil ? camera.status : "Capture retained on this phone")

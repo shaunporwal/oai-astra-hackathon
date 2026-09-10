@@ -6,7 +6,7 @@ SwiftUI/AVFoundation client with visual components adapted from the partner OptL
 
 - Rear **physical wide camera**, fixed at 1× to avoid automatic camera changes under the macro attachment.
 - Native live preview, autofocus/lock and bounded exposure compensation. No automatic torch or lens switching.
-- Capture the most recent video frame, encoded as a JPEG with a longest side of 960 pixels. This is a video-frame capture, not full-resolution still photography or saved video recording.
+- Capture the most recent video frame, center-cropped to a square and encoded as a 960×960 JPEG. This is a video-frame capture, not full-resolution still photography or saved video recording.
 - Retain captured JPEGs in the app Documents directory, with export through the share sheet.
 - Mark a normalized conjunctival rectangle on the captured image, or choose pupil/iris mode.
 - Send the exact JPEG/options to the shared Python snapshot endpoint. Display native overlays and local measurements.
@@ -68,3 +68,7 @@ A paired development Mac can copy the ignored `mobile-pairing.json` file to `tmp
 ### Astra access
 
 The primary Astra action accepts a saved frame without a drawn ROI. A conjunctival ROI is needed only for local vessel measurements. Startup and Settings include an authenticated connection/configuration check through the shared client; this does not spend API credits or validate an upstream key. The root `.env` `oai_api_key` alias is loaded by the Mac service. An API key is never embedded in the native app.
+
+### Square framing
+
+The live viewfinder is square and uses aspect-fill. The video-frame encoder saves the corresponding centered square before resizing to 960×960; the review canvas and backend therefore operate on square pixels without display-only stretching. The portrait sensor frame loses its excess top/bottom area. Keep the eye inside the visible square. This changes newly captured files only.

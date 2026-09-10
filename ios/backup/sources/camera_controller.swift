@@ -83,8 +83,10 @@ final class CameraController: NSObject, ObservableObject, AVCaptureVideoDataOutp
         guard CMTimeGetSeconds(timestamp-lastFrame) >= 0.3, let buffer = CMSampleBufferGetImageBuffer(sampleBuffer) else { return }
         lastFrame = timestamp
         let image = CIImage(cvPixelBuffer: buffer)
-        let scale = min(1,960/max(image.extent.width,image.extent.height))
-        let resized = image.transformed(by: CGAffineTransform(scaleX: scale,y: scale))
+        let crop = SquareCapture.cropRect(in:image.extent)
+        let square = image.cropped(to:crop).transformed(by:CGAffineTransform(translationX:-crop.minX,y:-crop.minY))
+        let scale = min(1,960/crop.width)
+        let resized = square.transformed(by: CGAffineTransform(scaleX: scale,y: scale))
         guard let cg = context.createCGImage(resized, from: resized.extent), let jpeg = UIImage(cgImage: cg).jpegData(compressionQuality: 0.92) else { return }
         DispatchQueue.main.async { self.latestJPEG = jpeg }
     }
@@ -97,7 +99,7 @@ final class CameraController: NSObject, ObservableObject, AVCaptureVideoDataOutp
 
 struct CameraPreview: UIViewRepresentable {
     let session: AVCaptureSession
-    func makeUIView(context: Context) -> PreviewSurface { let view=PreviewSurface();view.layerVideo.session=session;view.layerVideo.videoGravity = .resizeAspect;return view }
+    func makeUIView(context: Context) -> PreviewSurface { let view=PreviewSurface();view.layerVideo.session=session;view.layerVideo.videoGravity = .resizeAspectFill;return view }
     func updateUIView(_ uiView: PreviewSurface, context: Context) {}
 }
 final class PreviewSurface: UIView {

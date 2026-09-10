@@ -29,7 +29,7 @@ Open the top-right **Settings** button and paste into **Mac connection** on the 
 ## Capture and assess
 
 1. Put the external 15× attachment over the **rear main/wide camera**, used at 1×. Check preview for correct lens placement, focus and reflections. Stop Mac Continuity Camera use before opening the native camera.
-2. Capture a frame. This freezes a 960-pixel-long-side JPEG from video; it does not record a temporal video sequence or take a full-resolution still.
+2. Capture a frame. This freezes a 960×960 center-square JPEG from video, matching the square viewfinder; it does not record a temporal video sequence or take a full-resolution still.
 3. Optionally drag a rectangle over exposed conjunctiva to include candidate vessel measurements, excluding iris, skin and eyelids. Astra can review the saved frame without a region; local-only vessel measurement needs one. For pupil/iris mode, a region is not needed.
 4. Tap **Analyze + Ask Astra**. The Mac measures the saved JPEG, then sends that same frame for structured Astra review. Expand endpoint results and local measurements to inspect output.
 5. Retake to start another capture. No background Astra loop is running. Completed assessments disable the main action; a failed review retains its saved case for explicit retry. Server-cached successful reviews do not incur another request. A failed or interrupted upstream request may still be billed.

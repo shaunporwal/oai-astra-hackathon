@@ -212,3 +212,11 @@ Validation: signed iPhone scheme build and simulator build passed. Inspected a s
 Confirmed the mobile backend already loads the root `.env` lowercase `oai_api_key` through the CLI configuration layer and reports Astra configured. Found that the native primary action was unnecessarily blocked in redness mode until a user ROI existed. Removed the ROI prerequisite for Astra frame review; local-only vessel measurement still requires a region, and missing quantitative values remain unavailable. Added authenticated `POST /api/connection` and a shared Swift client method with a 10-second timeout. The app checks on startup/after pairing and offers a no-credit manual recheck in Settings, displaying connection failure versus Mac connected/Astra configured. This checks credentials are configured, not upstream API balance or key validity.
 
 Validation: all 36 Python tests passed, including authentication, key non-disclosure and no paid call for the connection route. Signed native build, installation, fresh USB pairing and launch succeeded. Restarted mobile backend to load the new route and local credential configuration. Authenticated connection returned HTTP 200 and Astra available; the review route returned the existing real six-target cached result without another paid request. Phone-displayed connection status and an actual phone-originated Astra request still need user confirmation. No secret or patient artifact was committed.
+
+## 2026-09-10 — Match square viewfinder and saved capture
+
+Resolved portrait video letterboxing: the previous preview used aspect-fit inside a fixed-height wide rectangle. The viewfinder is now 1:1 and uses aspect-fill. Video encoding applies the corresponding center-square crop before resizing to 960×960, so exported JPEGs, review ROI coordinates and backend/Astra input share the square framing. No image stretching, optical zoom change or backend measurement change. Earlier captures are retained unchanged.
+
+Validation: standalone Swift crop checks passed for portrait, landscape and nonzero-origin square bounds; signed iPhone build succeeded. Physical framing still requires checking through the user's attachment. No API requests were made.
+
+Installed the square-capture build, refreshed USB pairing and successfully launched it on the connected iPhone.
