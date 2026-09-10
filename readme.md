@@ -44,3 +44,7 @@ Choose a new output directory for every preparation run. See the workflow guide 
 The pipeline currently prepares video and supports capture-quality review/evaluation. Segmentation, biomarker accuracy, and clinical diagnostic performance have not been established.
 
 For a selectable live iPhone camera and analysis dashboard, see the [live demo guide](docs/guides/live-demo.md).
+
+## Backup iPhone client
+
+An independent SwiftUI/AVFoundation capture client is in [ios/backup](ios/backup/readme.md). It shares the Python measurement service and leaves the partner app separate.

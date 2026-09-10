@@ -9,3 +9,8 @@ vision/data/
 .env.*
 !.env.example
 /data/
+
+# Xcode user state and generated builds
+**/xcuserdata/
+**/*.xcuserstate
+ios/**/build/

@@ -112,3 +112,16 @@ class LiveTests(unittest.TestCase):
         self.assertEqual(saved['redness']['measurement'],r['geometry']['redness']['measurement'])
         headers['x-analysis-options']='{"target":"redness","roi":[0,0,2,2]}'
         self.assertEqual(self.client.post('/api/frame',content=self.data,headers=headers).status_code,422)
+
+    def test_lan_pairing_does_not_expose_session_token(self):
+        app=create_app(self.root,session_token='test-pairing-secret',lan_host='lab-mac.local')
+        with TestClient(app,client=('192.168.1.20',50000),base_url='http://lab-mac.local') as phone:
+            response=phone.get('/')
+            self.assertEqual(response.status_code,403)
+            self.assertNotIn('test-pairing-secret',response.text)
+            self.assertEqual(phone.post('/api/frame',content=self.data,headers={'content-type':'image/jpeg'}).status_code,403)
+            headers={'content-type':'image/jpeg','x-live-token':'test-pairing-secret'}
+            self.assertEqual(phone.post('/api/frame',content=self.data,headers=headers).status_code,200)
+            self.assertEqual(phone.get('/',headers={'host':'attacker.example'}).status_code,400)
+        with TestClient(app,client=('127.0.0.1',50000)) as local:
+            self.assertIn('test-pairing-secret',local.get('/').text)

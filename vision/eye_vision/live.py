@@ -10,6 +10,7 @@ from pathlib import Path
 import re
 import secrets
 import time
+from urllib.parse import urlparse
 
 import cv2
 import numpy as np
@@ -26,11 +27,11 @@ from .endpoints import attach_measurements
 STATIC = Path(__file__).parent / "static"
 
 
-def create_app(output=None):
+def create_app(output=None, *, session_token=None, lan_host=None):
     output = Path(output) if output else Path(__file__).resolve().parents[1]/"runs"
-    token = secrets.token_urlsafe(32)
+    token = session_token or secrets.token_urlsafe(32)
     app = FastAPI(docs_url=None, redoc_url=None, openapi_url=None)
-    app.add_middleware(TrustedHostMiddleware, allowed_hosts=["localhost", "127.0.0.1", "testserver"])
+    app.add_middleware(TrustedHostMiddleware, allowed_hosts=["localhost", "127.0.0.1", "testserver"] + ([lan_host] if lan_host else []))
     app.mount("/static", StaticFiles(directory=STATIC), name="static")
     review_lock = asyncio.Lock()
     frame_lock = asyncio.Lock()
@@ -65,7 +66,9 @@ def create_app(output=None):
             raise HTTPException(422,'Invalid analysis target or normalized ROI') from None
 
     @app.get("/")
-    async def index():
+    async def index(request: Request):
+        if lan_host and request.client and request.client.host not in ('127.0.0.1','::1','testclient'):
+            return HTMLResponse('Eye Lab mobile API. Pair using the configuration on your Mac.',status_code=403)
         return HTMLResponse((STATIC/"live.html").read_text().replace("__SESSION_TOKEN__", token), headers={"Cache-Control":"no-store"})
 
     @app.get("/api/status")
@@ -155,13 +158,31 @@ def main():
     parser=argparse.ArgumentParser(description="Local live eye-camera demo")
     parser.add_argument("--port",type=int,default=8765)
     parser.add_argument("--output",type=Path)
+    parser.add_argument('--lan-url',help='Opt in to phone access, e.g. http://your-mac.local:8765')
     args=parser.parse_args()
     if not 1 <= args.port <= 65535:
         parser.error("Port must be between 1 and 65535")
     import uvicorn
     configure_api_key()
     print(f"Open http://127.0.0.1:{args.port} on this Mac; choose the iPhone Continuity Camera.")
-    uvicorn.run(create_app(args.output),host="127.0.0.1",port=args.port,access_log=False)
+    token=None;lan_host=None
+    if args.lan_url:
+        parsed=urlparse(args.lan_url)
+        try: valid_port=(parsed.port or 80)==args.port
+        except ValueError: valid_port=False
+        if parsed.scheme!='http' or not parsed.hostname or not valid_port or parsed.username or parsed.password or parsed.path not in ('','/') or parsed.query or parsed.fragment:
+            parser.error('--lan-url must be an http origin matching --port')
+        lan_host=parsed.hostname
+        token=secrets.token_urlsafe(32)
+        folder=Path(args.output) if args.output else Path(__file__).resolve().parents[1]/'runs'
+        folder.mkdir(parents=True,exist_ok=True)
+        pairing=folder/'mobile-pairing.json'
+        fd=os.open(pairing,os.O_WRONLY|os.O_CREAT|os.O_TRUNC,0o600)
+        os.fchmod(fd,0o600)
+        with os.fdopen(fd,'w') as handle:
+            json.dump({'server_url':args.lan_url.rstrip('/'),'pairing_token':token},handle)
+        print(f'Mobile pairing configuration saved to {pairing}. Token rotates on restart.')
+    uvicorn.run(create_app(args.output,session_token=token,lan_host=lan_host),host='0.0.0.0' if lan_host else '127.0.0.1',port=args.port,access_log=False)
 
 
 if __name__ == "__main__":

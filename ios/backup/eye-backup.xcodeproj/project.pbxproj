@@ -1,0 +1,43 @@
+// !$*UTF8*$!
+{ archiveVersion = 1; classes = {}; objectVersion = 56; objects = {
+C0EDD6A94431525E5BEAB823 = { isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "sources/analysis_client.swift"; sourceTree = "<group>"; };
+5D4C4FBCA2287012BD802BAA = { isa = PBXBuildFile; fileRef = C0EDD6A94431525E5BEAB823; };
+A916B6F08CCC1073CC4F6B14 = { isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "sources/camera_controller.swift"; sourceTree = "<group>"; };
+AC5A46CDB7661003C447C623 = { isa = PBXBuildFile; fileRef = A916B6F08CCC1073CC4F6B14; };
+E55881864697357FAF30797B = { isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "sources/capture_view.swift"; sourceTree = "<group>"; };
+22718A6BD21714F1E2FB2F48 = { isa = PBXBuildFile; fileRef = E55881864697357FAF30797B; };
+79717E66D1C507AAA83043CD = { isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "sources/eye_backup_app.swift"; sourceTree = "<group>"; };
+2D031403B678F18A7215369D = { isa = PBXBuildFile; fileRef = 79717E66D1C507AAA83043CD; };
+97B1F5C6D2FE552028245687 = { isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "sources/frame_canvas.swift"; sourceTree = "<group>"; };
+D58482FA181FB9F0E7CFF850 = { isa = PBXBuildFile; fileRef = 97B1F5C6D2FE552028245687; };
+7D1043473D55BFA90E8530D3 = { isa = PBXFileReference; explicitFileType = wrapper.application; path = "eye-backup.app"; sourceTree = BUILT_PRODUCTS_DIR; };
+FBDC4F23F93125BBEEAE800C = { isa = PBXGroup; children = (7D1043473D55BFA90E8530D3,); name = Products; sourceTree = "<group>"; };
+64292B1C2B2E13EAD8788FC8 = { isa = PBXGroup; children = (C0EDD6A94431525E5BEAB823,A916B6F08CCC1073CC4F6B14,E55881864697357FAF30797B,79717E66D1C507AAA83043CD,97B1F5C6D2FE552028245687,FBDC4F23F93125BBEEAE800C,); sourceTree = "<group>"; };
+BCE16DD0260827ECF338C787 = { isa = PBXSourcesBuildPhase; buildActionMask = 2147483647; files = (5D4C4FBCA2287012BD802BAA,AC5A46CDB7661003C447C623,22718A6BD21714F1E2FB2F48,2D031403B678F18A7215369D,D58482FA181FB9F0E7CFF850,); runOnlyForDeploymentPostprocessing = 0; };
+7561BFB015D8F536760CB671 = { isa = PBXFrameworksBuildPhase; buildActionMask = 2147483647; files = (); runOnlyForDeploymentPostprocessing = 0; };
+0189424A5A60FED329FA868E = { isa = PBXResourcesBuildPhase; buildActionMask = 2147483647; files = (); runOnlyForDeploymentPostprocessing = 0; };
+BD604D99E75E45D38BC7AC8F = { isa = XCBuildConfiguration; name = Debug; buildSettings = {
+        PRODUCT_NAME = "eye-backup"; PRODUCT_BUNDLE_IDENTIFIER = "com.eyelab.research.backup";
+        SDKROOT = iphoneos; SUPPORTED_PLATFORMS = "iphoneos iphonesimulator"; SUPPORTS_MACCATALYST = NO; IPHONEOS_DEPLOYMENT_TARGET = 17.0; SWIFT_VERSION = 5.0;
+        TARGETED_DEVICE_FAMILY = 1; INFOPLIST_FILE = info.plist;
+        CODE_SIGN_STYLE = Automatic; GENERATE_INFOPLIST_FILE = NO;
+        ENABLE_USER_SCRIPT_SANDBOXING = YES; CLANG_ENABLE_MODULES = YES;
+        SWIFT_OPTIMIZATION_LEVEL = "-Onone";
+        LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/Frameworks";
+    }; };
+D41F56CEA1AC933D25C57AEB = { isa = XCBuildConfiguration; name = Release; buildSettings = {
+        PRODUCT_NAME = "eye-backup"; PRODUCT_BUNDLE_IDENTIFIER = "com.eyelab.research.backup";
+        SDKROOT = iphoneos; SUPPORTED_PLATFORMS = "iphoneos iphonesimulator"; SUPPORTS_MACCATALYST = NO; IPHONEOS_DEPLOYMENT_TARGET = 17.0; SWIFT_VERSION = 5.0;
+        TARGETED_DEVICE_FAMILY = 1; INFOPLIST_FILE = info.plist;
+        CODE_SIGN_STYLE = Automatic; GENERATE_INFOPLIST_FILE = NO;
+        ENABLE_USER_SCRIPT_SANDBOXING = YES; CLANG_ENABLE_MODULES = YES;
+        SWIFT_OPTIMIZATION_LEVEL = "-O";
+        LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/Frameworks";
+    }; };
+0652E436F42D75F5672A8BD9 = { isa = XCConfigurationList; buildConfigurations = (BD604D99E75E45D38BC7AC8F,D41F56CEA1AC933D25C57AEB,); defaultConfigurationIsVisible = 0; defaultConfigurationName = Release; };
+0E8A3AD980EC179856012B7E = { isa = PBXNativeTarget; buildConfigurationList = 0652E436F42D75F5672A8BD9; buildPhases = (BCE16DD0260827ECF338C787,7561BFB015D8F536760CB671,0189424A5A60FED329FA868E,); buildRules = (); dependencies = (); name = "eye-backup"; productName = "eye-backup"; productReference = 7D1043473D55BFA90E8530D3; productType = "com.apple.product-type.application"; };
+89E1FD6268CC0F221A2BE178 = { isa = XCBuildConfiguration; name = Debug; buildSettings = {}; };
+E6DE6C99132752C914FEF632 = { isa = XCBuildConfiguration; name = Release; buildSettings = {}; };
+2F4AAADE4813D7B897FCF5DC = { isa = XCConfigurationList; buildConfigurations = (89E1FD6268CC0F221A2BE178,E6DE6C99132752C914FEF632,); defaultConfigurationIsVisible = 0; defaultConfigurationName = Release; };
+98F54143AB4E86B28C3AFEE0 = { isa = PBXProject; attributes = { LastUpgradeCheck = 2600; }; buildConfigurationList = 2F4AAADE4813D7B897FCF5DC; compatibilityVersion = "Xcode 14.0"; developmentRegion = en; hasScannedForEncodings = 0; knownRegions = (en,Base,); mainGroup = 64292B1C2B2E13EAD8788FC8; productRefGroup = FBDC4F23F93125BBEEAE800C; projectDirPath = ""; projectRoot = ""; targets = (0E8A3AD980EC179856012B7E,); };
+}; rootObject = 98F54143AB4E86B28C3AFEE0; }

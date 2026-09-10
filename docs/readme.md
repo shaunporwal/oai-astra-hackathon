@@ -4,6 +4,8 @@ Start with the [iPhone runbook](guides/iphone-runbook.md) for capture and proces
 
 ## Guides
 
+- [Backup iPhone app](../ios/backup/readme.md): native capture, signing, pairing and installation.
+
 - [Redness capture](guides/redness-capture.md): region selection, candidate vessel masks and limitations.
 
 - [iPhone runbook](guides/iphone-runbook.md): recording, transfer, preparation, and optional API use.
