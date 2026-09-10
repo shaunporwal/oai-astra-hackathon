@@ -298,3 +298,7 @@ Renamed the native app header and iPhone display name to OptoLab, and updated th
 ## 2026-09-10 — Phone-to-Mac connectivity investigation
 
 The Mac backend responded to authenticated connection checks and reported Astra configured. Added a local temporary connection-status diagnostic containing only the server address, timestamp, error domain/code and connection success, plus clearer Local Network permission guidance. Device build/install/launch passed. Phone diagnostics reported NSURLErrorDomain -1004 against both air.local and the Wi-Fi IP; a USB-adjacent link-local route timed out (-1001). Mac firewall was disabled and Tailscale already allowed LAN access. Restored the original air.local pairing after these checks. The network cause remains unresolved pending verification of iPhone Wi-Fi and Local Network permission; no successful phone connection is claimed. No model calls were made.
+
+### Connectivity restored
+
+After the user reconnected the phone, refreshed pairing and relaunched OptoLab. The phone’s own authenticated connection check succeeded at 2026-09-10 21:05:21 UTC against air.local:8766 (connected=true, error_code=0). The exact intervening network/settings change is unknown. No paid model request was needed to verify connectivity.
