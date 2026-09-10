@@ -30,7 +30,7 @@ struct AnalysisClient {
     func connection() async throws -> ConnectionStatus {
         try JSONDecoder().decode(ConnectionStatus.self,from:await send(path:"api/connection",timeout:10))
     }
-    private func send(path: String, jpeg: Data? = nil, options: AnalysisOptions? = nil, timeout: TimeInterval = 150) async throws -> Data {
+    private func send(path: String, jpeg: Data? = nil, options: AnalysisOptions? = nil, timeout: TimeInterval = 150, sourceMode: String = "live_camera") async throws -> Data {
         guard let base=URL(string: pairing.server_url), let scheme=base.scheme, ["http","https"].contains(scheme), base.host != nil,
               base.user == nil,base.password == nil,base.query == nil,base.fragment == nil,
               base.path.isEmpty || base.path == "/", !pairing.pairing_token.isEmpty else { throw ClientError.message("Paste a valid pairing configuration from your Mac.") }
@@ -39,7 +39,7 @@ struct AnalysisClient {
         request.setValue(pairing.pairing_token,forHTTPHeaderField:"x-live-token")
         if let jpeg {
             request.httpBody=jpeg;request.setValue("image/jpeg",forHTTPHeaderField:"content-type")
-            request.setValue("live_camera",forHTTPHeaderField:"x-source-mode")
+            request.setValue(sourceMode,forHTTPHeaderField:"x-source-mode")
         }
         if let options { request.setValue(String(data:try JSONEncoder().encode(options),encoding:.utf8),forHTTPHeaderField:"x-analysis-options") }
         let session=URLSession(configuration:.ephemeral,delegate:NoRedirects(),delegateQueue:nil)
@@ -52,8 +52,8 @@ struct AnalysisClient {
         }
         return data
     }
-    func snapshot(jpeg: Data, options: AnalysisOptions) async throws -> Snapshot {
-        try JSONDecoder().decode(Snapshot.self,from:await send(path:"api/snapshot",jpeg:jpeg,options:options))
+    func snapshot(jpeg: Data, options: AnalysisOptions, sourceMode: String = "live_camera") async throws -> Snapshot {
+        try JSONDecoder().decode(Snapshot.self,from:await send(path:"api/snapshot",jpeg:jpeg,options:options,sourceMode:sourceMode))
     }
     func review(caseID: String) async throws -> Review {
         try JSONDecoder().decode(Review.self,from:await send(path:"api/review/\(caseID)"))

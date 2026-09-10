@@ -86,6 +86,17 @@ class LiveTests(unittest.TestCase):
         self.assertEqual(self.client.get(f'/api/snapshot/{case}').status_code,403)
         self.assertEqual(self.client.get(f'/api/snapshot/{case}',headers=self.headers).content,self.data)
 
+    def test_imported_image_keeps_provenance_and_exact_jpeg(self):
+        headers={**self.headers,'x-source-mode':'imported_image'}
+        response=self.client.post('/api/snapshot',content=self.data,headers=headers)
+        self.assertEqual(response.status_code,200)
+        folder=self.root/response.json()['case_id']
+        manifest=json.loads((folder/'manifest.json').read_text())
+        self.assertEqual(manifest['capture_mode'],'imported_image')
+        self.assertEqual(manifest['source_type'],'single_frame')
+        self.assertEqual(manifest['source_sha256'],hashlib.sha256(self.data).hexdigest())
+        self.assertEqual((folder/'frame_00000000.jpg').read_bytes(),self.data)
+
     def test_remote_hosts_rejected(self):
         self.assertEqual(self.client.get('/',headers={'host':'evil.example'}).status_code,400)
 

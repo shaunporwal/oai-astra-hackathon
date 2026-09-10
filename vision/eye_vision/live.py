@@ -96,8 +96,8 @@ def create_app(output=None, *, session_token=None, lan_host=None):
     async def snapshot(request: Request):
         data, decoded = await read_frame(request)
         mode=request.headers.get("x-source-mode", "unknown")
-        if mode not in ("live_camera", "recorded_video"):
-            raise HTTPException(422, "Specify live_camera or recorded_video source")
+        if mode not in ("live_camera", "recorded_video", "imported_image"):
+            raise HTTPException(422, "Specify live_camera, recorded_video or imported_image source")
         options=analysis_options(request)
         case="live-"+secrets.token_hex(8)
         folder=output/case

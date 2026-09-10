@@ -238,3 +238,13 @@ Removed numbered Capture/Review/Results navigation. One fixed capture page now o
 Signed phone and simulator builds passed. Added a Debug simulator-only layout loader for existing ignored image/response artifacts; it is excluded from device builds and does not call APIs. Inspected the modal with a prior real assessment, showing bounded height, retained frame and the close control. Layout artifacts remain in `vision/runs/`. No additional Astra requests were made.
 
 Installed the final single-page/modal build, refreshed USB pairing and successfully launched it on the physical iPhone. Modal screenshot inspection used a cached prior assessment and made no API request.
+
+## 2026-09-10 — Import phone photos into the shared assessment flow
+
+Added an Import from Photos action using the scoped system Photos picker. Picker/import pauses automatic camera capture, shows loading/error states, and retains the previous capture if decoding fails. Successful import uses the shared capture persistence/result-reset path, then the same optional ROI and explicit Send to Astra/modal flow. A pure ImageIO preparation helper downsamples before full pixel decode, applies orientation, preserves the full field of view and exports a JPEG without original EXIF/GPS metadata. The original Photos asset is unchanged.
+
+Extended the shared Swift snapshot client with a source-mode argument (live camera remains the default for existing clients). The backend accepts and persists imported_image provenance. No unverified macro-lens metadata is inferred. Restarted the mobile service and refreshed USB pairing, installed the signed update and launched it successfully.
+
+Validation: native import checks passed for EXIF orientation, whole-image aspect ratio, 960-pixel maximum dimension, GPS removal and invalid-data rejection. All 37 Python tests passed, including imported-image provenance, hash and exact-JPEG retention. Signed iPhone build passed. Physical Photos picker selection and a phone-import-to-Astra request still need an on-device smoke check. No paid API calls were made.
+
+Simulator build also passed; inspected `vision/runs/native-import-control.png` and confirmed the new import action fits on the capture page without scrolling at the checked default size.

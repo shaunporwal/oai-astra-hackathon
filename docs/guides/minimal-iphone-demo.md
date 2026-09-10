@@ -45,3 +45,7 @@ Installation succeeded. Launch after trust succeeded. Camera alignment through t
 ## Astra connection status
 
 The app now checks the authenticated Mac connection at startup and after pairing. **Mac connected · Astra configured** means the phone reached the backend and the backend has an API key/SDK configured; it does not verify API balance or key validity upstream. Use **Settings → Check connection · no API credits** to retry after allowing Local Network access or changing Wi-Fi. The bottom **Send to Astra** action sends the saved frame through the Mac to Astra. **Measure locally** intentionally makes no API request. The root `.env` alias `oai_api_key` is supported; restart the Mac service and refresh phone pairing after changing the key.
+
+## Use an existing photo
+
+Tap **Import from Photos**, choose an image and wait for the preview. The original photo stays unchanged; the app creates an orientation-corrected JPEG for analysis. The full image is retained without the camera's square crop. Optionally mark conjunctiva, then tap **Send to Astra**. Importing alone does not upload anything or use API credits. Close the review popup to return to the image, or use Retake to return to the camera. The Mac must still be running and connected for assessment.

@@ -1,4 +1,5 @@
 import SwiftUI
+import PhotosUI
 
 struct CaptureView: View {
     @StateObject private var camera=CameraController()
@@ -15,6 +16,12 @@ struct CaptureView: View {
     @State private var measurementsExpanded=false
     @State private var message="Capture uses the rear wide camera. Place the macro attachment over that lens."
     @State private var exposure=0.0
+    @State private var photoPickerPresented=false
+    @State private var photoSelection: PhotosPickerItem?
+    @State private var importing=false
+    @State private var importError=""
+    @State private var importErrorPresented=false
+    @State private var sourceMode="live_camera"
 
     @State private var settingsPresented=false
     @State private var reviewPresented=false
@@ -28,7 +35,7 @@ struct CaptureView: View {
     @State private var autoHint=""
 
     private var canAnalyze: Bool {
-        frozen != nil && pairing != nil && !busy
+        frozen != nil && pairing != nil && !busy && !importing
     }
     var body: some View {
         NavigationStack {
@@ -47,7 +54,7 @@ struct CaptureView: View {
                                         if mode == "auto" { armAutoCapture() } else { cancelAutoCapture() }
                                     }
                             } else {
-                                Text("Captured · ready to send").font(.headline)
+                                Text(sourceMode == "imported_image" ? "Imported · ready to send" : "Captured · ready to send").font(.headline)
                             }
                             captureCard
                                 .frame(width:min(geometry.size.width,max(160,geometry.size.height-235)))
@@ -74,13 +81,17 @@ struct CaptureView: View {
                             Spacer(minLength:0)
                         }.frame(maxWidth:.infinity)
                     }.padding(.horizontal,20)
-                }.padding(.top,8).disabled(busy || reviewPresented)
+                }.padding(.top,8).disabled(busy || importing || reviewPresented)
             }
             .foregroundStyle(Theme.Colors.ink)
             .toolbar(.hidden,for:.navigationBar)
             .safeAreaInset(edge:.bottom,spacing:0) { primaryAction.disabled(reviewPresented) }
             .overlay { if reviewPresented { reviewModal } }
             .sheet(isPresented:$settingsPresented) { settings }
+            .photosPicker(isPresented:$photoPickerPresented,selection:$photoSelection,matching:.images,preferredItemEncoding:.current)
+            .alert("Could not import photo",isPresented:$importErrorPresented) {
+                Button("OK",role:.cancel) {}
+            } message: { Text(importError) }
         }
         .tint(Theme.Colors.info)
         .preferredColorScheme(.light)
@@ -90,7 +101,15 @@ struct CaptureView: View {
             #endif
             loadUSBPairing();camera.start();if captureMode == "auto" { armAutoCapture() };await checkConnection()
         }
-        .onChange(of:scenePhase) { _,phase in if phase != .active { cancelAutoCapture();camera.stop() } else if frozen == nil { camera.start() } }
+        .onChange(of:scenePhase) { _,phase in if phase != .active { cancelAutoCapture();camera.stop() } else if frozen == nil && !photoPickerPresented && !importing { camera.start() } }
+        .onChange(of:photoPickerPresented) { _,shown in
+            if shown { cancelAutoCapture();camera.stop() }
+            else if frozen == nil && !importing { camera.start() }
+        }
+        .onChange(of:photoSelection) { _,item in
+            guard let item else { return }
+            Task { await importPhoto(item) }
+        }
         .onChange(of:settingsPresented) { _,shown in if shown { cancelAutoCapture() } }
         .onReceive(camera.$sample) { sample in
             guard autoCapture, frozen == nil, let sample else { return }
@@ -140,7 +159,7 @@ struct CaptureView: View {
                 } else {
                     CameraPreview(session:camera.session).background(.black)
                 }
-                Text(frozen == nil ? "LIVE · 1× WIDE" : "SAVED FRAME")
+                Text(frozen == nil ? "LIVE · 1× WIDE" : sourceMode == "imported_image" ? "IMPORTED PHOTO" : "SAVED FRAME")
                     .font(.system(size:10,weight:.bold)).tracking(1)
                     .padding(10).foregroundStyle(.white).background(.black.opacity(0.6),in:Capsule())
                     .padding(14).allowsHitTesting(false)
@@ -248,6 +267,11 @@ struct CaptureView: View {
 
     private var primaryAction: some View {
         VStack(spacing:8) {
+            Button { photoPickerPresented=true } label: {
+                Label(importing ? "Loading photo…" : "Import from Photos",systemImage:"photo.on.rectangle")
+                    .frame(maxWidth:.infinity,minHeight:44)
+            }.buttonStyle(.bordered).disabled(busy || importing)
+            if importing { ProgressView() }
             Text(frozen == nil ? (autoCapture || !autoHint.isEmpty ? autoHint : connectionMessage) : busy ? "Astra request in progress · tap to view" : review != nil ? "Assessment saved · tap to reopen" : "Sends this frame to OpenAI · uses API credits")
                 .font(.caption).lineLimit(2).multilineTextAlignment(.center)
             Button {
@@ -260,7 +284,7 @@ struct CaptureView: View {
             } label: {
                 Label(frozen != nil ? (review != nil || busy ? "View Astra review" : "Send to Astra") : captureMode == "manual" ? "Capture frame" : autoCapture ? "Pause auto capture" : "Start auto capture",systemImage:frozen != nil ? "sparkles" : captureMode == "manual" ? "camera.fill" : "viewfinder")
             }.buttonStyle(PrimaryButtonStyle())
-                .disabled(frozen == nil ? (captureMode == "manual" && camera.latestJPEG == nil) : pairing == nil && review == nil && !busy)
+                .disabled(importing || (frozen == nil ? (captureMode == "manual" && camera.latestJPEG == nil) : pairing == nil && review == nil && !busy))
         }.padding(.horizontal,20).padding(.top,12).padding(.bottom,8)
             .background(.ultraThinMaterial)
     }
@@ -359,9 +383,24 @@ struct CaptureView: View {
         captureGate.reset();autoStarted=Date();autoHint="Waiting for sharp, stable detail…";autoCapture=true
     }
     private func cancelAutoCapture() { autoCapture=false;captureGate.reset() }
-    private func capture(jpeg: Data?) {
+    @MainActor private func importPhoto(_ item: PhotosPickerItem) async {
+        guard !busy && !importing else { return }
+        cancelAutoCapture();camera.stop();importing=true
+        defer {
+            importing=false;photoSelection=nil
+            if frozen == nil && !photoPickerPresented { camera.start() }
+        }
+        do {
+            guard let data=try await item.loadTransferable(type:Data.self) else { throw ImageImport.ImportError.unsupported }
+            let jpeg=try await Task.detached(priority:.userInitiated) { try ImageImport.prepare(data) }.value
+            capture(jpeg:jpeg,source:"imported_image")
+            message="Photo imported. Send to Astra when ready. Capture conditions and lens are not verified."
+        } catch { importError=error.localizedDescription;importErrorPresented=true }
+    }
+    private func capture(jpeg: Data?, source: String = "live_camera") {
         guard let data=jpeg else { return }
         cancelAutoCapture()
+        sourceMode=source
         frozen=data;roi=nil;snapshot=nil;review=nil;camera.stop()
         do {
             let directory=FileManager.default.urls(for:.documentDirectory,in:.userDomainMask)[0]
@@ -377,7 +416,7 @@ struct CaptureView: View {
         do {
             if snapshot == nil {
                 message="Measuring the saved frame on your Mac…"
-                snapshot=try await client.snapshot(jpeg:frozen,options:AnalysisOptions(target:target,roi:roi))
+                snapshot=try await client.snapshot(jpeg:frozen,options:AnalysisOptions(target:target,roi:roi),sourceMode:sourceMode)
             }
             if includeAstra,let snapshot {
                 message="Astra is reviewing the saved frame…"
