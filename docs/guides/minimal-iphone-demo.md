@@ -30,7 +30,7 @@ Open the top-right **Settings** button and paste into **Mac connection** on the 
 
 1. Put the external 15× attachment over the **rear main/wide camera**, used at 1×. Check preview for correct lens placement, focus and reflections. Stop Mac Continuity Camera use before opening the native camera.
 2. Capture a frame. This freezes a 960-pixel-long-side JPEG from video; it does not record a temporal video sequence or take a full-resolution still.
-3. For conjunctival vessels, drag a rectangle over exposed conjunctiva, excluding iris, skin and eyelids. For pupil/iris mode, a region is not needed.
+3. Optionally drag a rectangle over exposed conjunctiva to include candidate vessel measurements, excluding iris, skin and eyelids. Astra can review the saved frame without a region; local-only vessel measurement needs one. For pupil/iris mode, a region is not needed.
 4. Tap **Analyze + Ask Astra**. The Mac measures the saved JPEG, then sends that same frame for structured Astra review. Expand endpoint results and local measurements to inspect output.
 5. Retake to start another capture. No background Astra loop is running. Completed assessments disable the main action; a failed review retains its saved case for explicit retry. Server-cached successful reviews do not incur another request. A failed or interrupted upstream request may still be billed.
 
@@ -41,3 +41,7 @@ The optional **Measure locally · no API credits** action on Review runs measure
 Native macro-image acquisition, reproducible frame-specific processing, candidate vessel coverage or pupil/iris ratio when measurable, and Astra observations for six specified research endpoints. Numerical measurements come from the local image algorithms; Astra does not invent missing values. Some endpoints need different views, calibration or temporal protocols and will remain unavailable. This is a capture-and-assessment prototype, not a validated diagnostic application. See [clinical value](../research/clinical-value.md) for the clinical workflow and evidence plan.
 
 Installation succeeded. Launch after trust succeeded. Camera alignment through this attachment and phone-to-Mac networking still require an on-device smoke check.
+
+## Astra connection status
+
+The app now checks the authenticated Mac connection at startup and after pairing. **Mac connected · Astra configured** means the phone reached the backend and the backend has an API key/SDK configured; it does not verify API balance or key validity upstream. Use **Settings → Check connection · no API credits** to retry after allowing Local Network access or changing Wi-Fi. The bottom **Analyze + Ask Astra** action sends the saved frame through the Mac to Astra. **Measure locally** intentionally makes no API request. The root `.env` alias `oai_api_key` is supported; restart the Mac service and refresh phone pairing after changing the key.

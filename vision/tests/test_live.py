@@ -62,6 +62,16 @@ class LiveTests(unittest.TestCase):
         self.assertIsNone(result.json()['pupil'])
         self.assertEqual(list(self.root.iterdir()),[])
 
+    def test_connection_checks_pairing_without_exposing_key_or_calling_astra(self):
+        self.assertEqual(self.client.post('/api/connection').status_code,403)
+        with patch.dict('os.environ',{'OPENAI_API_KEY':'test-not-a-real-key'}), patch('eye_vision.astra.analyze',side_effect=AssertionError('No API request')):
+            response=self.client.post('/api/connection',headers=self.headers)
+            self.assertEqual(response.status_code,200)
+            self.assertEqual(response.json(),{'astra_available':True})
+        with patch.dict('os.environ',{'OPENAI_API_KEY':''}):
+            self.assertEqual(self.client.post('/api/connection',headers=self.headers).json(),{'astra_available':False})
+        self.assertEqual(list(self.root.iterdir()),[])
+
     def test_snapshot_hashes_provenance_and_no_key(self):
         response=self.client.post('/api/snapshot',content=self.data,headers=self.headers)
         self.assertEqual(response.status_code,200)

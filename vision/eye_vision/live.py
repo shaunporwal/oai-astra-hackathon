@@ -75,6 +75,11 @@ def create_app(output=None, *, session_token=None, lan_host=None):
     async def status():
         return {"astra_available":has_astra(), "diagnosis_status":"not_configured", "transport":"loopback_browser_frames"}
 
+    @app.post("/api/connection")
+    async def connection(request: Request):
+        authorize(request)
+        return {"astra_available":has_astra()}
+
     @app.post("/api/frame")
     async def frame(request: Request):
         if frame_lock.locked():

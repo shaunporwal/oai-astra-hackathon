@@ -1,6 +1,7 @@
 import Foundation
 
 struct Pairing: Codable { let server_url: String; let pairing_token: String }
+struct ConnectionStatus: Decodable { let astra_available: Bool }
 struct AnalysisOptions: Codable { let target: String; let roi: [Double]? }
 struct LocalMeasurement: Codable, Identifiable {
     let target_id: String; let name: String; let unit: String; let value: Double?; let status: String; let reason: String
@@ -26,12 +27,15 @@ final class NoRedirects: NSObject, URLSessionTaskDelegate {
 }
 struct AnalysisClient {
     let pairing: Pairing
-    private func send(path: String, jpeg: Data? = nil, options: AnalysisOptions? = nil) async throws -> Data {
+    func connection() async throws -> ConnectionStatus {
+        try JSONDecoder().decode(ConnectionStatus.self,from:await send(path:"api/connection",timeout:10))
+    }
+    private func send(path: String, jpeg: Data? = nil, options: AnalysisOptions? = nil, timeout: TimeInterval = 150) async throws -> Data {
         guard let base=URL(string: pairing.server_url), let scheme=base.scheme, ["http","https"].contains(scheme), base.host != nil,
               base.user == nil,base.password == nil,base.query == nil,base.fragment == nil,
               base.path.isEmpty || base.path == "/", !pairing.pairing_token.isEmpty else { throw ClientError.message("Paste a valid pairing configuration from your Mac.") }
         var request=URLRequest(url:base.appendingPathComponent(path))
-        request.httpMethod="POST";request.timeoutInterval=150
+        request.httpMethod="POST";request.timeoutInterval=timeout
         request.setValue(pairing.pairing_token,forHTTPHeaderField:"x-live-token")
         if let jpeg {
             request.httpBody=jpeg;request.setValue("image/jpeg",forHTTPHeaderField:"content-type")

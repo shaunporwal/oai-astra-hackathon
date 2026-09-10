@@ -64,3 +64,7 @@ Apple references: [AVCam camera app](https://developer.apple.com/documentation/a
 ### USB pairing during development
 
 A paired development Mac can copy the ignored `mobile-pairing.json` file to `tmp/mobile-pairing.json` inside this app’s data container using `devicectl device copy to`. At startup the app decodes this one-use file and deletes it, retaining pairing in memory. This avoids clipboard setup on the initial install; it does not embed credentials in the app bundle or persist the OpenAI key. After termination, re-provision the file or use manual pairing.
+
+### Astra access
+
+The primary Astra action accepts a saved frame without a drawn ROI. A conjunctival ROI is needed only for local vessel measurements. Startup and Settings include an authenticated connection/configuration check through the shared client; this does not spend API credits or validate an upstream key. The root `.env` `oai_api_key` alias is loaded by the Mac service. An API key is never embedded in the native app.

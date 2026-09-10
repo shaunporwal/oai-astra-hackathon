@@ -18,9 +18,11 @@ struct CaptureView: View {
 
     @State private var settingsPresented=false
     @State private var stage=0
+    @State private var connectionMessage="Checking Mac connection…"
+    @State private var checkingConnection=false
 
     private var canAnalyze: Bool {
-        frozen != nil && pairing != nil && (target != "redness" || roi != nil) && !busy
+        frozen != nil && pairing != nil && !busy
     }
     private var stageTitle: String { stage == 0 ? "Bring your eye into focus" : stage == 1 ? "Review your capture" : "Your frame assessment" }
     private var stageDetail: String {
@@ -34,6 +36,7 @@ struct CaptureView: View {
                 ScrollView {
                     VStack(alignment:.leading,spacing:20) {
                         header
+                        Text(connectionMessage).font(.caption).foregroundStyle(Theme.Colors.inkSecondary)
                         stagePicker
                         VStack(alignment:.leading,spacing:6) {
                             Text(stageTitle).font(Theme.Typography.title)
@@ -58,7 +61,7 @@ struct CaptureView: View {
         }
         .tint(Theme.Colors.info)
         .preferredColorScheme(.light)
-        .task { loadUSBPairing();camera.start() }
+        .task { loadUSBPairing();camera.start();await checkConnection() }
         .onChange(of:scenePhase) { _,phase in if phase != .active { camera.stop() } else if frozen == nil { camera.start() } }
     }
 
@@ -155,7 +158,7 @@ struct CaptureView: View {
             }.font(.subheadline.weight(.semibold)).frame(minHeight:44)
             Divider()
             Button("Measure locally · no API credits") { Task { await analyze(includeAstra:false) } }
-                .font(.subheadline).disabled(!canAnalyze)
+                .font(.subheadline).disabled(!canAnalyze || (target == "redness" && roi == nil))
         }.glassCard()
     }
 
@@ -208,7 +211,7 @@ struct CaptureView: View {
             if busy {
                 Text("Processing your saved frame…").font(.caption)
             } else if stage != 0 && review == nil {
-                Text(pairing == nil ? "Open settings to pair with your Mac." : target == "redness" && roi == nil ? "Mark a region on the saved frame first." : "Uploads this frame to OpenAI · uses API credits")
+                Text(pairing == nil ? "Open settings to pair with your Mac." : target == "redness" && roi == nil ? "Astra can review this frame. Mark a region to also measure vessels. Uses API credits." : "Uploads this frame to OpenAI · uses API credits")
                     .font(.caption).multilineTextAlignment(.center)
             }
             Button {
@@ -227,7 +230,9 @@ struct CaptureView: View {
         NavigationStack {
             Form {
                 Section("Mac connection") {
-                    Text(pairing == nil ? "Not configured" : "Pairing configured · connection tested on analysis")
+                    Text(connectionMessage)
+                    Button("Check connection · no API credits") { Task { await checkConnection() } }
+                        .disabled(checkingConnection || pairing == nil)
                     if let pairing { Text(pairing.server_url).font(.caption) }
                     Text("Keep both devices on the same trusted Wi-Fi. The OpenAI key stays on your Mac.").font(.caption)
                     TextEditor(text:$pairingText).frame(height:90).font(.caption.monospaced())
@@ -239,6 +244,7 @@ struct CaptureView: View {
                             snapshot=nil;review=nil;pairingText="";stage=frozen == nil ? 0 : 1
                             message="Pairing loaded. Analyze a frame to test the connection."
                             settingsPresented=false
+                            Task { await checkConnection() }
                         } catch { message="Invalid pairing JSON. Paste the full configuration from the Mac.";settingsPresented=false }
                     }.disabled(pairingText.isEmpty)
                 }
@@ -259,6 +265,18 @@ struct CaptureView: View {
         frozen=nil;localFile=nil;roi=nil;snapshot=nil;review=nil;stage=0
         message="Position the macro attachment and capture when detail is sharp."
         camera.start()
+    }
+    @MainActor private func checkConnection() async {
+        guard !checkingConnection else { return }
+        guard let pairing else { connectionMessage="Mac not paired · open Settings to connect Astra";return }
+        checkingConnection=true;defer { checkingConnection=false }
+        connectionMessage="Checking Mac connection…"
+        do {
+            let status=try await AnalysisClient(pairing:pairing).connection()
+            connectionMessage=status.astra_available ? "Mac connected · Astra configured" : "Mac connected · Astra key not configured"
+        } catch {
+            connectionMessage="Mac connection failed · check Wi-Fi and pairing in Settings"
+        }
     }
     private func loadUSBPairing() {
         // Development installation can provision a one-use file over the paired USB connection.
