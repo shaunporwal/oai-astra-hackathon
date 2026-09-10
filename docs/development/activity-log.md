@@ -314,3 +314,7 @@ Backend was listening and authenticated Mac-local checks succeeded, but the phon
 ### Tailscale connection restored
 
 With user approval, briefly paused the Mac VPN, relaunched and checked the phone connection, then reconnected the VPN in a finally block. The Wi-Fi IP still failed during the pause. After the user enabled Tailscale on the iPhone, its peer became online. A direct Tailscale-IP HTTP request was blocked by iOS ATS (-1022). Changed the paired development origin to the Mac’s unqualified Tailscale MagicDNS hostname (http://air:8766), refreshed pairing and relaunched. The phone’s authenticated check succeeded at 21:25:50 UTC (connected=true, error_code=0). No ATS exception or global networking-security change was added. The original LAN failure remains unexplained; the working route uses Tailscale on both devices. No model requests were made.
+
+## 2026-09-10 — README app screenshot
+
+Added the user-selected iPhone screenshot unchanged at docs/assets/optolab-astra-review.png and embedded it near the top of the root README at a 360-pixel display width, with descriptive alt text and a short caption. Verified the committed asset matches the supplied local screenshot byte-for-byte and the relative image link exists.
