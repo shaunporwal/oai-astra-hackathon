@@ -100,3 +100,7 @@ The review popup leads with capture quality, observed features and available num
 ### Combined analysis and recoverable reviews
 
 New captures assess pupil/iris and conjunctival vessels together; the old target selector is removed. Optionally mark conjunctiva for vessel coverage. The saved-frame and popup views show available experimental geometry/vessel overlays together. The phone now starts a Mac review job and polls for its result, recovering cached responses first after a timeout. See [review jobs](../../docs/development/review-jobs.md).
+
+## Demo fallback: Tailscale
+
+If direct LAN access fails, both devices can use the same authorized Tailscale network with MagicDNS enabled. Start the service using the Mac’s **unqualified Tailscale hostname**, for example `--lan-url http://air:8766`, then refresh the phone’s pairing. This route was verified from the physical iPhone. Keep Tailscale connected on both devices and the Mac backend running. A direct Tailscale IP produced an iOS App Transport Security rejection in this build; no broad ATS bypass is enabled. The paired hostname still passes the server’s host allowlist and requests require its session token. For a distributed deployment, configure an HTTPS endpoint rather than relying on this development setup.
