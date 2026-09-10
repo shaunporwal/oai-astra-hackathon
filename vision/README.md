@@ -35,3 +35,16 @@ A webcam is useful for capture, framing, and integration experiments. Clinical u
 Detector reference: https://docs.opencv.org/4.12.0/db/d28/tutorial_cascade_classifier.html
 
 Run checks: `python -m unittest discover -s tests`.
+
+## Phone close-up workflow (v0.2)
+
+Use the new preparation command for iPhone eye close-ups; it does not depend on a visible face:
+
+```sh
+pip install -e '.[astra]'
+eye-prepare ~/Downloads/eye.mov --output runs/phone-001
+open runs/phone-001/contact_sheet.jpg
+eye-astra runs/phone-001/manifest.json --case-id phone-001
+```
+
+The last command validates locally and sends nothing. Live Astra review requires `OPENAI_API_KEY`, `--send`, and `--output`. It assesses capture usability, not disease. See the [iPhone runbook](../docs/iphone-runbook.md), [evaluation guide](../docs/evaluation.md), and [activity log](../docs/activity-log.md).

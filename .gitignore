@@ -3,3 +3,8 @@ __pycache__/
 *.egg-info/
 .DS_Store
 vision/runs/
+runs/
+vision/data/
+.env
+.env.*
+!.env.example
